@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Ninepins Admin</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="page-header">
+      <p class="eyebrow">Pumperella Kegelspiel</p>
+      <h1>Ziehung verwalten</h1>
+      <p class="muted">Lokales Admin-Werkzeug. Private Schlüssel und Ziehungsarchive bleiben auf diesem Gerät.</p>
+    </header>
+
+    <section class="card">
+      <h2>1. Schlüssel</h2>
+      <div class="button-row">
+        <button id="generate-key" type="button">Neues Schlüsselpaar erzeugen</button>
+        <label class="button secondary">
+          Privaten Schlüssel importieren
+          <input id="private-key-file" type="file" accept="application/json,.json" hidden>
+        </label>
+        <button id="export-private-key" class="secondary" type="button" disabled>Privaten Schlüssel exportieren</button>
+        <button id="export-public-key" class="secondary" type="button" disabled>Öffentlichen Schlüssel exportieren</button>
+      </div>
+      <p id="key-status" class="status" aria-live="polite">Kein Signaturschlüssel geladen.</p>
+    </section>
+
+    <section class="card">
+      <h2>2. Ziehung konfigurieren</h2>
+      <form id="draw-form">
+        <label>
+          Spieler, eine Person pro Zeile
+          <textarea id="players" rows="8" required placeholder="Anna\nBen\nCarla"></textarea>
+        </label>
+
+        <div class="grid-two">
+          <label>
+            Startdatum
+            <input id="start-date" type="date" required>
+          </label>
+          <label>
+            Enddatum
+            <input id="end-date" type="date" required>
+          </label>
+        </div>
+
+        <label>
+          Öffentliche Spieler-App URL
+          <input id="player-app-url" type="url" required placeholder="https://ptrcdx.github.io/ninepins/">
+        </label>
+
+        <button id="draw-button" type="submit">Ziehung erzeugen</button>
+      </form>
+      <p id="draw-status" class="status" aria-live="polite"></p>
+    </section>
+
+    <section class="card">
+      <h2>3. Archiv</h2>
+      <div class="button-row">
+        <label class="button secondary">
+          Archiv importieren
+          <input id="archive-file" type="file" accept="application/json,.json" hidden>
+        </label>
+        <button id="export-archive" class="secondary" type="button">Archiv exportieren</button>
+        <button id="export-csv" class="secondary" type="button">CSV exportieren</button>
+      </div>
+      <p id="archive-status" class="status" aria-live="polite">Noch keine Ziehungen im lokalen Archiv.</p>
+    </section>
+
+    <section class="card" id="results-card" hidden>
+      <h2>4. Persönliche Links</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Spieler</th>
+              <th>Termine</th>
+              <th>Link</th>
+            </tr>
+          </thead>
+          <tbody id="results-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
