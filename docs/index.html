@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Pumperella Kegelspiel</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero" aria-labelledby="title">
+      <p class="eyebrow">Pumperella Kegelspiel</p>
+      <h1 id="title">Drei Würfe. Drei Termine.</h1>
+      <p id="status" class="status" role="status">Persönlichen Link wird geprüft …</p>
+    </section>
+
+    <section class="lane" aria-label="Kegelbahn">
+      <div class="pins" aria-hidden="true">
+        <span class="pin p1"></span>
+        <span class="pin p2"></span>
+        <span class="pin p3"></span>
+        <span class="pin p4"></span>
+        <span class="pin p5"></span>
+        <span class="pin p6"></span>
+        <span class="pin p7"></span>
+        <span class="pin p8"></span>
+        <span class="pin p9"></span>
+      </div>
+      <div id="ball" class="ball" aria-hidden="true"></div>
+    </section>
+
+    <section class="controls" aria-label="Spielsteuerung">
+      <button id="throw-button" type="button" disabled>Kugel werfen</button>
+      <p id="throw-counter" class="counter">Wurf 0 von 3</p>
+    </section>
+
+    <section class="results" aria-labelledby="results-title">
+      <h2 id="results-title">Deine Termine</h2>
+      <ol class="date-list">
+        <li class="date-card"><span class="label">1. Termin</span><strong id="date-1">Noch verdeckt</strong></li>
+        <li class="date-card"><span class="label">2. Termin</span><strong id="date-2">Noch verdeckt</strong></li>
+        <li class="date-card"><span class="label">3. Termin</span><strong id="date-3">Noch verdeckt</strong></li>
+      </ol>
+    </section>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
