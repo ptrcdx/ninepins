@@ -109,6 +109,38 @@ describe("drawDatesWithoutReplacement", () => {
     ).toBe(true);
   });
 
+  it("never reuses dates assigned in previous draw sessions", () => {
+    const assignments = drawDatesWithoutReplacement({
+      players: ["Alice", "Bob"],
+      startDate: "2026-10-01",
+      endDate: "2026-10-12",
+      excludedDates: ["2026-10-01", "2026-10-02", "2026-10-03"],
+      randomIndex: () => 0,
+    });
+
+    const allDates = assignments.flatMap(({ dates }) => dates);
+    expect(allDates).toEqual([
+      "2026-10-04",
+      "2026-10-05",
+      "2026-10-06",
+      "2026-10-07",
+      "2026-10-08",
+      "2026-10-09",
+    ]);
+  });
+
+  it("fails if previous assignments leave too few unused dates", () => {
+    expect(() =>
+      drawDatesWithoutReplacement({
+        players: ["Alice", "Bob"],
+        startDate: "2026-10-01",
+        endDate: "2026-10-08",
+        excludedDates: ["2026-10-01", "2026-10-02", "2026-10-03"],
+        randomIndex: () => 0,
+      }),
+    ).toThrow("Date range contains 5 unused days after exclusions but 6 unique dates are required.");
+  });
+
   it("fails before drawing if the range cannot supply enough unique dates", () => {
     expect(() =>
       drawDatesWithoutReplacement({
@@ -129,6 +161,18 @@ describe("drawDatesWithoutReplacement", () => {
         randomIndex: () => 0,
       }),
     ).toThrow("Player identifiers must be unique.");
+  });
+
+  it("rejects invalid excluded dates", () => {
+    expect(() =>
+      drawDatesWithoutReplacement({
+        players: ["Alice"],
+        startDate: "2026-10-01",
+        endDate: "2026-10-10",
+        excludedDates: ["2026-02-30"],
+        randomIndex: () => 0,
+      }),
+    ).toThrow("Invalid calendar date: 2026-02-30");
   });
 
   it("rejects an invalid injected random index", () => {
