@@ -131,10 +131,14 @@ export function secureRandomIndex(maxExclusive) {
 /**
  * Draws globally unique dates for all players without replacement.
  *
+ * Previously assigned dates can be supplied through excludedDates. This lets
+ * the local admin archive enforce uniqueness across multiple draw sessions.
+ *
  * @param {object} options Draw configuration.
  * @param {string[]} options.players Unique player identifiers or display names.
  * @param {string} options.startDate Inclusive start date in YYYY-MM-DD format.
  * @param {string} options.endDate Inclusive end date in YYYY-MM-DD format.
+ * @param {string[]} [options.excludedDates=[]] Dates already assigned in earlier draws.
  * @param {number} [options.datesPerPlayer=3] Number of dates assigned per player.
  * @param {(maxExclusive: number) => number} [options.randomIndex=secureRandomIndex]
  * Random index provider. Injectable for deterministic tests.
@@ -144,22 +148,31 @@ export function drawDatesWithoutReplacement({
   players,
   startDate,
   endDate,
+  excludedDates = [],
   datesPerPlayer = 3,
   randomIndex = secureRandomIndex,
 }) {
   validatePlayers(players);
   validateDatesPerPlayer(datesPerPlayer);
+  const excludedDateSet = validateExcludedDates(excludedDates);
 
   if (typeof randomIndex !== "function") {
     throw new TypeError("randomIndex must be a function.");
   }
 
-  const pool = createInclusiveDatePool(startDate, endDate);
+  const fullPool = createInclusiveDatePool(startDate, endDate);
+  const pool = fullPool.filter((date) => !excludedDateSet.has(date));
   const requiredDateCount = players.length * datesPerPlayer;
 
   if (pool.length < requiredDateCount) {
+    if (excludedDateSet.size === 0) {
+      throw new RangeError(
+        `Date range contains ${pool.length} days but ${requiredDateCount} unique dates are required.`,
+      );
+    }
+
     throw new RangeError(
-      `Date range contains ${pool.length} days but ${requiredDateCount} unique dates are required.`,
+      `Date range contains ${pool.length} unused days after exclusions but ${requiredDateCount} unique dates are required.`,
     );
   }
 
@@ -202,6 +215,24 @@ function validatePlayers(players) {
   if (new Set(normalized).size !== normalized.length) {
     throw new RangeError("Player identifiers must be unique.");
   }
+}
+
+/**
+ * Validates dates already assigned in prior draw sessions.
+ *
+ * @param {unknown} excludedDates Candidate exclusion list.
+ * @returns {Set<string>} Unique validated exclusions.
+ */
+function validateExcludedDates(excludedDates) {
+  if (!Array.isArray(excludedDates)) {
+    throw new TypeError("excludedDates must be an array of ISO dates.");
+  }
+
+  for (const date of excludedDates) {
+    parseIsoDate(date);
+  }
+
+  return new Set(excludedDates);
 }
 
 /**
