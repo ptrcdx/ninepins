@@ -1,18 +1,25 @@
 /**
  * Domain logic for generating and drawing calendar dates without replacement.
  *
- * All date arithmetic is performed in UTC to avoid daylight-saving-time and
- * local-time-zone edge cases. Public APIs use ISO calendar dates (YYYY-MM-DD).
+ * Application dates are Berlin calendar dates without a time-of-day. UTC is
+ * used only as a stable internal arithmetic representation so browser or host
+ * time zones can never shift an assigned calendar day.
  */
+
+export const APPLICATION_TIME_ZONE = "Europe/Berlin";
+export const APPLICATION_LOCALE = "de-DE";
 
 const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const MILLISECONDS_PER_DAY = 86_400_000;
 
 /**
- * Parses an ISO calendar date and returns its UTC epoch value.
+ * Parses an ISO calendar date and returns its canonical UTC epoch value.
+ *
+ * The returned timestamp is an implementation detail. Semantically, the input
+ * remains a date-only value in {@link APPLICATION_TIME_ZONE}.
  *
  * @param {string} isoDate Date in YYYY-MM-DD format.
- * @returns {number} UTC epoch milliseconds at 00:00:00.
+ * @returns {number} Canonical UTC epoch milliseconds at 00:00:00 UTC.
  * @throws {TypeError} If the input is not a string.
  * @throws {RangeError} If the date is malformed or does not exist.
  */
@@ -45,13 +52,30 @@ export function parseIsoDate(isoDate) {
 }
 
 /**
- * Formats a UTC epoch value as an ISO calendar date.
+ * Formats a canonical UTC epoch value as an ISO calendar date.
  *
- * @param {number} utcEpochMilliseconds UTC epoch milliseconds.
+ * @param {number} utcEpochMilliseconds Canonical UTC epoch milliseconds.
  * @returns {string} Date in YYYY-MM-DD format.
  */
 export function formatIsoDate(utcEpochMilliseconds) {
   return new Date(utcEpochMilliseconds).toISOString().slice(0, 10);
+}
+
+/**
+ * Formats an application calendar date for display using the fixed Berlin time zone.
+ *
+ * @param {string} isoDate Date in YYYY-MM-DD format.
+ * @returns {string} German-formatted calendar date.
+ */
+export function formatApplicationDate(isoDate) {
+  const canonicalUtc = parseIsoDate(isoDate);
+
+  return new Intl.DateTimeFormat(APPLICATION_LOCALE, {
+    timeZone: APPLICATION_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(canonicalUtc));
 }
 
 /**
