@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  APPLICATION_TIME_ZONE,
   createInclusiveDatePool,
   drawDatesWithoutReplacement,
+  formatApplicationDate,
   parseIsoDate,
 } from "../src/domain/date-draw.js";
 
@@ -21,6 +23,17 @@ function createSequenceRandomIndex(sequence) {
     return value % maxExclusive;
   };
 }
+
+describe("application calendar policy", () => {
+  it("is permanently pinned to Europe/Berlin", () => {
+    expect(APPLICATION_TIME_ZONE).toBe("Europe/Berlin");
+  });
+
+  it("formats dates with Berlin semantics instead of the runtime time zone", () => {
+    expect(formatApplicationDate("2026-03-29")).toBe("29.03.2026");
+    expect(formatApplicationDate("2026-10-25")).toBe("25.10.2026");
+  });
+});
 
 describe("parseIsoDate", () => {
   it("accepts valid calendar dates", () => {
@@ -41,7 +54,16 @@ describe("createInclusiveDatePool", () => {
     ]);
   });
 
-  it("handles daylight-saving transitions independently of local time", () => {
+  it("stays continuous across the Berlin switch to daylight-saving time", () => {
+    expect(createInclusiveDatePool("2026-03-28", "2026-03-31")).toEqual([
+      "2026-03-28",
+      "2026-03-29",
+      "2026-03-30",
+      "2026-03-31",
+    ]);
+  });
+
+  it("stays continuous across the Berlin switch back to standard time", () => {
     expect(createInclusiveDatePool("2026-10-24", "2026-10-27")).toEqual([
       "2026-10-24",
       "2026-10-25",
