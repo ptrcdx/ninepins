@@ -1200,10 +1200,10 @@ class BowlingApp {
       try {
         const date = await this.drawDate();
         this.drawNumber += 1;
-        this.ui[\`date-\${this.drawNumber}\`].textContent = date;
-        this.ui[\`date-row-\${this.drawNumber}\`].className = 'revealed';
+        this.ui[`date-${this.drawNumber}`].textContent = date;
+        this.ui[`date-row-${this.drawNumber}`].className = 'revealed';
         this.ui.result.className = 'result show date';
-        this.ui.resultLabel.textContent = \`Termin \${this.drawNumber} von 3\`;
+        this.ui.resultLabel.textContent = `Termin ${this.drawNumber} von 3`;
         this.ui.resultValue.textContent = date;
         this.ui.status.textContent = 'Wurf beendet';
         this.ui.hintTitle.textContent = 'Die Kegel bleiben liegen';
