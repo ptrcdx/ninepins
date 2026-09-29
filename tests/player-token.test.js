@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  base64UrlToBytes,
+  bytesToBase64Url,
   createSignedDrawToken,
   exportPublicKeyJwk,
   generateSigningKeyPair,
@@ -65,9 +67,10 @@ describe("player token integration", () => {
     const publicJwk = await exportPublicKeyJwk(keyPair.publicKey);
     const token = await createSignedDrawToken(DRAW, keyPair.privateKey);
     const publicKey = await importVerificationKey(publicJwk);
-    const [payload, signature] = token.split(".");
-    const replacement = payload.endsWith("A") ? "B" : "A";
-    const tamperedToken = `${payload.slice(0, -1)}${replacement}.${signature}`;
+    const [payloadText, signature] = token.split(".");
+    const payload = base64UrlToBytes(payloadText);
+    payload[payload.length - 1] ^= 1;
+    const tamperedToken = `${bytesToBase64Url(payload)}.${signature}`;
 
     await expect(verifyDrawToken(tamperedToken, publicKey)).rejects.toThrow(
       "Die Signatur des persönlichen Links ist ungültig.",
