@@ -1,50 +1,1363 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="dark">
-  <title>Pumperella Kegelspiel</title>
-  <link rel="stylesheet" href="./styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pumperella Kegelspiel</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#13100e}#app{position:fixed;inset:0}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+.hud{position:fixed;inset:0;pointer-events:none;padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom));display:flex;flex-direction:column;justify-content:space-between}
+.top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.card{background:rgba(20,15,12,.92);border:1px solid rgba(255,255,255,.11);box-shadow:0 6px 18px rgba(0,0,0,.20);border-radius:14px;padding:9px 12px}.brand{font-weight:800;letter-spacing:.09em}.status{text-align:right;min-width:116px}.status small{display:block;opacity:.58;text-transform:uppercase;letter-spacing:.08em;font-size:10px}.status strong{display:block;margin-top:1px;font-size:14px}
+.bottom{display:flex;justify-content:center}.hint{width:min(520px,calc(100vw - 24px));text-align:center}.hint strong{display:block;font-size:14px}.hint span{display:block;font-size:12px;opacity:.75;margin-top:3px;line-height:1.35}.meter{height:5px;border-radius:999px;background:rgba(255,255,255,.1);margin-top:8px;overflow:hidden}.meter i{display:block;width:0;height:100%;background:linear-gradient(90deg,#a8d6a9,#f0ca77,#df8171)}
+.result{position:fixed;left:50%;top:max(70px,calc(env(safe-area-inset-top) + 54px));transform:translateX(-50%) translateY(-8px);opacity:0;transition:.22s;min-width:230px;text-align:center;background:rgba(20,15,12,.86);border:1px solid rgba(255,255,255,.13);border-radius:14px;padding:10px 14px;pointer-events:none}.result.show{opacity:1;transform:translateX(-50%) translateY(0)}.result small{display:block;opacity:.62}.result strong{display:block;margin-top:2px;font-size:22px}.result.gutter strong{color:#ffb594}.result.date strong{color:#f4d59c}
+.aim{position:fixed;height:3px;display:none;transform-origin:0 50%;border-radius:999px;background:rgba(255,244,215,.88);box-shadow:0 0 14px rgba(255,226,166,.38);pointer-events:none}.marker{position:fixed;width:82px;height:82px;margin:-41px 0 0 -41px;border-radius:50%;border:1px solid rgba(255,255,255,.34);box-shadow:0 0 0 7px rgba(255,255,255,.035);pointer-events:none;animation:pulse 1.55s ease-in-out infinite}.marker:after{content:"ZIEHEN";position:absolute;left:50%;top:-22px;transform:translateX(-50%);font-size:9px;letter-spacing:.12em;color:rgba(255,255,255,.7)}@keyframes pulse{0%,100%{transform:scale(.94);opacity:.42}50%{transform:scale(1.05);opacity:.85}}
+@media(max-width:600px){.brand{font-size:13px}.status{min-width:102px}.hint{padding:10px 12px}.marker{width:76px;height:76px;margin:-38px 0 0 -38px}}
+@media(prefers-reduced-motion:reduce){.marker{animation:none}.result{transition:none}}
+
+.version{display:block;font-size:9px;font-weight:500;opacity:.55;letter-spacing:.08em;margin-top:3px}
+#next{pointer-events:auto;appearance:none;border:1px solid #d9b478;background:#e6c180;color:#24170d;border-radius:10px;padding:11px 22px;margin-top:12px;font:700 14px system-ui;min-height:44px;cursor:pointer}
+#next[hidden]{display:none}#next:focus-visible{outline:3px solid white;outline-offset:3px}
+.is-aiming .hint{opacity:.18;transition:opacity .12s}.is-aiming .status{border-color:#d9b478}
+.aim:after{content:"";position:absolute;right:-1px;top:-4px;width:10px;height:10px;border-top:2px solid #fff4d7;border-right:2px solid #fff4d7;transform:rotate(45deg)}
+.left-stack{display:flex;flex-direction:column;gap:8px}.dates{min-width:176px}.dates small{display:block;opacity:.58;text-transform:uppercase;letter-spacing:.08em;font-size:10px}.dates ol{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:3px}.dates li{display:flex;gap:7px;align-items:baseline;font-size:12px}.dates li span{opacity:.5;min-width:14px}.dates li strong{font-size:12px;font-weight:700}.dates li.pending strong{opacity:.45;font-weight:500}.dates li.revealed strong{color:#f4d59c}
+@media(max-height:480px){.hint{padding:7px 12px}.hint span{font-size:10px}.hint strong{font-size:12px}.meter{margin-top:4px}.result{top:64px}.brand{font-size:12px}.dates{padding:5px 8px}.dates ol{display:flex;gap:8px}.dates li{gap:3px}.dates li span{display:none}}
+@media(max-width:600px){.dates{min-width:148px;padding:7px 9px}.dates li{font-size:10px}.dates li strong{font-size:10px}}
+</style>
 </head>
 <body>
-  <main class="shell">
-    <section class="hero" aria-labelledby="title">
-      <p class="eyebrow">Pumperella Kegelspiel</p>
-      <h1 id="title">Drei Würfe. Drei Termine.</h1>
-      <p id="status" class="status" role="status">Persönlichen Link wird geprüft …</p>
-    </section>
+<div id="app"></div>
+<div class="hud">
+  <div class="top"><div class="left-stack"><div class="card brand">PUMPERELLA<small class="version">KEGELSPIEL</small></div><div class="card dates" aria-label="Gezogene Termine"><small>Deine Termine</small><ol><li class="pending" id="date-row-1"><span>1.</span><strong id="date-1">Noch verdeckt</strong></li><li class="pending" id="date-row-2"><span>2.</span><strong id="date-2">Noch verdeckt</strong></li><li class="pending" id="date-row-3"><span>3.</span><strong id="date-3">Noch verdeckt</strong></li></ol></div></div><div class="card status"><small>Status</small><strong id="status">Link wird geprüft ...</strong></div></div>
+  <div class="bottom"><div class="card hint"><strong id="hintTitle">Persönlichen Link prüfen</strong><span id="hintText">Nach erfolgreicher Prüfung liegt die Kugel vorne bereit.</span><div class="meter"><i id="power"></i></div><button id="next" type="button" hidden>Nächster Wurf</button></div></div>
+</div>
+<div class="result" id="result" aria-live="polite"><small id="resultLabel"></small><strong id="resultValue"></strong></div>
+<div class="aim" id="aim"></div>
+<div class="marker" id="marker" style="display:none" aria-hidden="true"></div>
+<script type="module">
+import { createPlayerSession } from "./app.js";
+/**
+ * Pure geometry and gesture calculations for Pumperella.
+ * Coordinates use Y up; decreasing Z points towards the pin deck.
+ * The visual profile is expressed relative to the FLAT FOOT, not the COM.
+ * @module model
+ */
 
-    <section class="lane" aria-label="Kegelbahn">
-      <div class="pins" aria-hidden="true">
-        <span class="pin p1"></span>
-        <span class="pin p2"></span>
-        <span class="pin p3"></span>
-        <span class="pin p4"></span>
-        <span class="pin p5"></span>
-        <span class="pin p6"></span>
-        <span class="pin p7"></span>
-        <span class="pin p8"></span>
-        <span class="pin p9"></span>
-      </div>
-      <div id="ball" class="ball" aria-hidden="true"></div>
-    </section>
+/** @type {ReadonlyArray<ReadonlyArray<number>>} Radius/height pairs. */
+const PIN_PROFILE = Object.freeze([
+  // The pin profile remains calibrated to the supplied real-lane reference photo. The pin is
+  // broader through the lower belly, narrows more clearly above the shoulder,
+  // and has a short neck with a compact rounded head.
+  [0.118, 0.00], [0.150, 0.035], [0.198, 0.10], [0.245, 0.20],
+  [0.270, 0.32], [0.278, 0.45], [0.266, 0.58], [0.230, 0.70],
+  [0.182, 0.82], [0.132, 0.94], [0.108, 1.04], [0.104, 1.13],
+  // Two red rings sit around this narrow neck section.
+  [0.108, 1.20], [0.118, 1.25],
+  // Compact rounded head.
+  [0.137, 1.30], [0.148, 1.36], [0.145, 1.42], [0.126, 1.47],
+  [0.088, 1.495], [0, 1.505]
+]);
 
-    <section class="controls" aria-label="Spielsteuerung">
-      <button id="throw-button" type="button" disabled>Kugel werfen</button>
-      <p id="throw-counter" class="counter">Wurf 0 von 3</p>
-    </section>
+// One shared geometric scale. The visible pin is treated as a 400 mm pin;
+// the adult ball is 160 mm in diameter and the pin-deck square has a
+// 1000 mm diagonal. This prevents independent visual tuning from making the
+// ball, pins and deck drift out of proportion again.
+const MODEL_UNITS_PER_METRE = PIN_PROFILE[PIN_PROFILE.length - 1][1] / 0.400;
+const REGULATION_BALL_RADIUS_M = 0.080;
+// Visual/gameplay calibration requested after V22: +9 % diameter while preserving
+// identical visible and physical radii.
+const BALL_SIZE_MULTIPLIER = 1.09;
+const REGULATION_DECK_DIAGONAL_M = 1.000;
+const PHOTO_DECK_COMPRESSION = 0.82;
+const REGULATION_PIN_DIAMETER_AT_90MM_M = 0.110;
 
-    <section class="results" aria-labelledby="results-title">
-      <h2 id="results-title">Deine Termine</h2>
-      <ol class="date-list">
-        <li class="date-card"><span class="label">1. Termin</span><strong id="date-1">Noch verdeckt</strong></li>
-        <li class="date-card"><span class="label">2. Termin</span><strong id="date-2">Noch verdeckt</strong></li>
-        <li class="date-card"><span class="label">3. Termin</span><strong id="date-3">Noch verdeckt</strong></li>
-      </ol>
-    </section>
-  </main>
+/** Shared dimensions for the production lane; ball, pins and lane still use one world scale. */
+const SETTINGS = Object.freeze({
+  // V25 keeps the official scale as the baseline, but applies a small gameplay/visual
+  // multiplier because the previous 160 mm render read too small against this camera
+  // and pin silhouette. The collider uses the same radius as the visible mesh.
+  ballRadius: REGULATION_BALL_RADIUS_M * MODEL_UNITS_PER_METRE * BALL_SIZE_MULTIPLIER,
+  ballMass: 3.00,
+  ballStartZ: 2.20,
+  previousBallStartZ: 4.45,
+  pinMass: 1.66,
+  laneHalfWidth: 1.98,
+  gutterWidth: 0.64,
+  gutterTopY: -0.11,
+  trackConstraintEndZ: -15.05,
+  pitAbsorbZ: -16.05,
+  fixedStep: 1 / 60,
+  maxSubsteps: 2,
+  pinLinearDamping: 0.010,
+  pinAngularDamping: 0.004,
+  floorClearance: 0.003,
+  // Simulation units are scaled from the real 160 mm ball. At full pull,
+  // 22 units/s corresponds to roughly 6.2 m/s at this geometric scale.
+  minLaunchSpeed: 11.5,
+  maxLaunchSpeed: 20.5,
+  maxSideSpeed: 4.2,
+  // Once released, a real nine-pin ball has enough momentum to reach the pit.
+  // Keep a small forward floor instead of treating a slowly rolling ball as finished.
+  minForwardTravelSpeed: 2.6,
+  noHitHardTimeout: 8.5,
+  hitHardTimeout: 8.5
+});
 
-  <script type="module" src="./app.js"></script>
+/**
+ * V27 photo-calibrated pin deck.
+ *
+ * The supplied reference image reads as a compact, unmistakable 1–2–3–2–1
+ * diamond from the player's viewpoint. The previous regulation-derived deck
+ * was mathematically valid but visually too stretched for this camera and pin
+ * silhouette. These positions preserve the nine-pin diamond while tuning the
+ * row spacing for the rendered perspective.
+ */
+const PIN_DECK_DIAGONAL = REGULATION_DECK_DIAGONAL_M * MODEL_UNITS_PER_METRE * PHOTO_DECK_COMPRESSION;
+const PIN_DECK = Object.freeze({
+  frontZ: -10.45,
+  // A 1-2-3-2-1 diamond made from the centre, four corners and four side
+  // midpoints of a square whose diagonal is 1000 mm. Four equal row steps
+  // therefore span exactly one full diagonal front-to-back, and the middle
+  // row spans the same distance left-to-right.
+  rowStepZ: PIN_DECK_DIAGONAL / 4,
+  halfRowStepX: PIN_DECK_DIAGONAL / 4
+});
+
+/** @returns {ReadonlyArray<ReadonlyArray<number>>} */
+function createReferencePinHomes() {
+  const z = PIN_DECK.frontZ;
+  const dz = PIN_DECK.rowStepZ;
+  const dx = PIN_DECK.halfRowStepX;
+  return Object.freeze([
+    Object.freeze([0,       z]),          // 1
+    Object.freeze([-dx,     z - dz]),     // 2
+    Object.freeze([ dx,     z - dz]),     // 3
+    Object.freeze([-2*dx,   z - 2*dz]),   // 4
+    Object.freeze([0,       z - 2*dz]),   // 5
+    Object.freeze([ 2*dx,   z - 2*dz]),   // 6
+    Object.freeze([-dx,     z - 3*dz]),   // 7
+    Object.freeze([ dx,     z - 3*dz]),   // 8
+    Object.freeze([0,       z - 4*dz])    // 9
+  ]);
+}
+
+const PIN_HOMES = createReferencePinHomes();
+
+/** Fail fast if a later edit breaks the visible 1–2–3–2–1 symmetry. */
+function validateReferencePinHomes(homes) {
+  if (homes.length !== 9) throw new Error('Nine pin positions are required.');
+  const rows = [1,2,3,2,1];
+  const eps = 1e-9;
+  let offset = 0;
+  for (let row = 0; row < rows.length; row += 1) {
+    const count = rows[row];
+    const rowPins = homes.slice(offset, offset + count);
+    const expectedZ = PIN_DECK.frontZ - row * PIN_DECK.rowStepZ;
+    if (!rowPins.every(([, z]) => Math.abs(z - expectedZ) < eps)) {
+      throw new Error(`Pin row ${row + 1} has invalid depth.`);
+    }
+    offset += count;
+  }
+  if (Math.abs(homes[4][0]) > eps) throw new Error('Middle pin must stay on lane centre.');
+  const frontBack = Math.abs(homes[8][1] - homes[0][1]);
+  const leftRight = Math.abs(homes[5][0] - homes[3][0]);
+  if (Math.abs(frontBack - PIN_DECK_DIAGONAL) > eps || Math.abs(leftRight - PIN_DECK_DIAGONAL) > eps) {
+    throw new Error('Pin deck must preserve the photo-calibrated square diagonal in both axes.');
+  }
+  const expectedBallDiameter = 2 * REGULATION_BALL_RADIUS_M * MODEL_UNITS_PER_METRE * BALL_SIZE_MULTIPLIER;
+  if (Math.abs(SETTINGS.ballRadius * 2 - expectedBallDiameter) > eps) {
+    throw new Error('Ball render and collider scale must remain linked.');
+  }
+}
+validateReferencePinHomes(PIN_HOMES);
+
+/**
+ * Calculate volume, COM and principal inertias of a solid of revolution.
+ * Uniform density is assumed. Midpoint quadrature integrates small solid disks;
+ * inertias use the disk formula and the parallel-axis theorem. These values
+ * replace Cannon's bounding-box inertia approximation for the compound body.
+ * @param {ReadonlyArray<ReadonlyArray<number>>} profile Radius/height pairs.
+ * @param {number} mass Positive total mass in simulation units.
+ * @param {number} [samples=128] Integration slices per profile segment.
+ * @returns {{volume:number, centerY:number, inertiaX:number, inertiaY:number}}
+ * @throws {RangeError} If the profile, mass or sample count is invalid.
+ */
+function computeMassProperties(profile, mass, samples = 128) {
+  if (!Number.isFinite(mass) || mass <= 0 || !Number.isInteger(samples) || samples < 2) {
+    throw new RangeError('Mass and sample count must be positive.');
+  }
+  if (profile.length < 2) throw new RangeError('At least two profile points are required.');
+  let volume = 0;
+  let firstMoment = 0;
+  const disks = [];
+  for (let index = 1; index < profile.length; index += 1) {
+    const [radius0, y0] = profile[index - 1];
+    const [radius1, y1] = profile[index];
+    if (![radius0, radius1, y0, y1].every(Number.isFinite) ||
+        radius0 < 0 || radius1 < 0 || y1 <= y0) {
+      throw new RangeError('Heights must increase and radii must be non-negative.');
+    }
+    const dy = (y1 - y0) / samples;
+    for (let sample = 0; sample < samples; sample += 1) {
+      const fraction = (sample + 0.5) / samples;
+      const radius = radius0 + (radius1 - radius0) * fraction;
+      const y = y0 + (y1 - y0) * fraction;
+      const diskVolume = Math.PI * radius * radius * dy;
+      disks.push({ radius, y, volume: diskVolume });
+      volume += diskVolume;
+      firstMoment += y * diskVolume;
+    }
+  }
+  if (volume <= 0) throw new RangeError('The profile must enclose positive volume.');
+  const centerY = firstMoment / volume;
+  const density = mass / volume;
+  let inertiaX = 0;
+  let inertiaY = 0;
+  for (const disk of disks) {
+    const diskMass = disk.volume * density;
+    inertiaX += diskMass * (disk.radius ** 2 / 4 + (disk.y - centerY) ** 2);
+    inertiaY += diskMass * disk.radius ** 2 / 2;
+  }
+  return { volume, centerY, inertiaX, inertiaY };
+}
+
+/**
+ * Calculate a pull distance that actually fits below the visible ball.
+ * Browser chrome is excluded by using the canvas viewport height.
+ * @param {number} ballY Ball center in viewport CSS pixels.
+ * @param {number} viewportHeight Canvas height in CSS pixels.
+ * @returns {number} Pull distance for full power, in CSS pixels.
+ */
+function getPullLimit(ballY, viewportHeight) {
+  return Math.max(36, Math.min(240, viewportHeight - ballY - 28));
+}
+
+/**
+ * Map a backwards slingshot gesture to the actual launch velocity.
+ * Pulling right aims left. A short tap cancels rather than launching.
+ * @param {number} dx Horizontal displacement in CSS pixels.
+ * @param {number} dy Downwards displacement in CSS pixels.
+ * @param {number} pullLimit Available distance for full power.
+ * @returns {{power:number, speed:number, side:number, canLaunch:boolean}}
+ */
+function calculateAim(dx, dy, pullLimit) {
+  const power = Math.max(0, Math.min(1, dy / Math.max(1, pullLimit)));
+  const side = -Math.max(-1, Math.min(1, dx / 170)) * SETTINGS.maxSideSpeed;
+  const speed = SETTINGS.minLaunchSpeed + power * (SETTINGS.maxLaunchSpeed - SETTINGS.minLaunchSpeed);
+  return { power, speed, side, canLaunch: dy >= 18 && power >= 0.09 };
+}
+
+/**
+ * Approximate viewport projection in the vertical camera plane (x = 0).
+ * Used by layout tests without depending on WebGL or the Three.js package.
+ * @param {number} y World Y coordinate.
+ * @param {number} z World Z coordinate.
+ * @param {{y:number,z:number,targetY:number,targetZ:number,fov:number}} camera
+ * @param {number} height Viewport height in CSS pixels.
+ * @returns {number} Projected Y coordinate in CSS pixels.
+ */
+function projectVertical(y, z, camera, height) {
+  const forwardY = camera.targetY - camera.y;
+  const forwardZ = camera.targetZ - camera.z;
+  const norm = Math.hypot(forwardY, forwardZ);
+  const fy = forwardY / norm;
+  const fz = forwardZ / norm;
+  const dy = y - camera.y;
+  const dz = z - camera.z;
+  const depth = dy * fy + dz * fz;
+  const vertical = dy * -fz + dz * fy;
+  return (1 - vertical / (depth * Math.tan(camera.fov * Math.PI / 360))) * height / 2;
+}
+
+/**
+ * Build the convex lower pin shell with a genuinely flat circular base.
+ * All faces point outwards. The shell's local origin is at Y = 0.45.
+ * Neck and head are separate overlapping shapes on the same rigid body.
+ * @param {number} [segments=16] Number of radial segments.
+ * @returns {{vertices:number[][],faces:number[][],offsetY:number}}
+ */
+function createLowerHull(segments = 16) {
+  if (!Number.isInteger(segments) || segments < 8) throw new RangeError('At least eight radial segments are required.');
+  const rings = PIN_PROFILE.filter(([, y]) => y <= 0.94);
+  const vertices = [];
+  const faces = [];
+  const offsetY = 0.47;
+  for (const [radius, y] of rings) {
+    for (let segment = 0; segment < segments; segment += 1) {
+      const angle = 2 * Math.PI * segment / segments;
+      vertices.push([radius * Math.cos(angle), y - offsetY, radius * Math.sin(angle)]);
+    }
+  }
+  const bottom = [];
+  const top = [];
+  for (let segment = 0; segment < segments; segment += 1) {
+    bottom.push(segment);
+    top.unshift((rings.length - 1) * segments + segment);
+  }
+  faces.push(bottom, top);
+  for (let ring = 0; ring < rings.length - 1; ring += 1) {
+    for (let segment = 0; segment < segments; segment += 1) {
+      const next = (segment + 1) % segments;
+      const lower = ring * segments;
+      const upper = (ring + 1) * segments;
+      faces.push([lower + segment, upper + segment, upper + next, lower + next]);
+    }
+  }
+  return { vertices, faces, offsetY };
+}
+
+
+
+/**
+ * Cannon adapter with COM-centered compound pins and fixed-step simulation.
+ * No collision callback adds forces or impulses. No angular axis is locked.
+ * No pin orientation is changed outside the explicit pinsetter cycle.
+ */
+class BowlingPhysics {
+  /**
+   * @param {object} cannon The pinned cannon-es module namespace.
+   */
+  constructor(cannon) {
+    this.C = cannon;
+    this.world = new cannon.World({ gravity: new cannon.Vec3(0, -9.82, 0) });
+    this.world.allowSleep = true;
+    this.world.solver.iterations = 5;
+    this.world.solver.tolerance = 1e-4;
+    this.world.defaultContactMaterial.friction = 0.32;
+    this.world.defaultContactMaterial.restitution = 0.008;
+    this.massProperties = computeMassProperties(PIN_PROFILE, SETTINGS.pinMass);
+    // A real skittle is not a homogeneous solid. Bias the effective rigid-body COM
+    // slightly upward so the broad belly does not behave like a roly-poly toy.
+    this.pinCenterY = this.massProperties.centerY + 0.075;
+    this.surfaceMaterial = new cannon.Material('surface');
+    this.pinMaterial = new cannon.Material('pin');
+    this.ballMaterial = new cannon.Material('ball');
+    this.world.addContactMaterial(new cannon.ContactMaterial(this.pinMaterial, this.surfaceMaterial, {
+      friction: 0.48, restitution: 0.004, contactEquationStiffness: 6e6, contactEquationRelaxation: 5
+    }));
+    this.world.addContactMaterial(new cannon.ContactMaterial(this.ballMaterial, this.surfaceMaterial, {
+      friction: 0.12, restitution: 0.003
+    }));
+    this.world.addContactMaterial(new cannon.ContactMaterial(this.ballMaterial, this.pinMaterial, {
+      friction: 0.22, restitution: 0.012
+    }));
+    this.world.addContactMaterial(new cannon.ContactMaterial(this.pinMaterial, this.pinMaterial, {
+      friction: 0.26, restitution: 0.014
+    }));
+    this.surfaces = [];
+    this.pins = [];
+    this.pinIds = new Set();
+    this.hitPins = new Set();
+    this.shotActive = false;
+    this.gutter = false;
+    this.ballAbsorbed = false;
+    this.elapsed = 0;
+    this.quietTime = 0;
+    this.buildSurfaces();
+    for (const [x, z] of PIN_HOMES) this.createPin(x, z);
+    this.ball = new cannon.Body({
+      mass: SETTINGS.ballMass,
+      shape: new cannon.Sphere(SETTINGS.ballRadius),
+      material: this.ballMaterial,
+      linearDamping: 0.010,
+      angularDamping: 0.025,
+      collisionFilterGroup: 4,
+      collisionFilterMask: 1 | 2
+    });
+    this.world.addBody(this.ball);
+    this.onBallCollision = this.onBallCollision.bind(this);
+    this.ball.addEventListener('collide', this.onBallCollision);
+    this.resetBall();
+  }
+
+  /** Create matching render/collision dimensions, including the rear pit. */
+  buildSurfaces() {
+    this.addSurface('wood', [SETTINGS.laneHalfWidth * 2, 0.18, 21.2], [0, -0.09, -4.2]);
+    const gutterCenter = SETTINGS.laneHalfWidth + SETTINGS.gutterWidth / 2;
+    for (const side of [-1, 1]) {
+      // A shallow recessed channel keeps the ball captured without creating a launch ramp.
+      this.addSurface('gutter', [SETTINGS.gutterWidth, 0.14, 23.8], [side * gutterCenter, SETTINGS.gutterTopY - 0.07, -5.5]);
+      this.addSurface('side', [0.18, 0.54, 23.8], [side * (SETTINGS.laneHalfWidth + SETTINGS.gutterWidth + 0.09), -0.14, -5.5]);
+    }
+    // Deep pit floor. There is intentionally NO physical rear wall: the ball
+    // is absorbed by the pit zone before it can rebound onto the lane.
+    this.addSurface('rubber', [6.25, 0.18, 3.6], [0, -0.30, -16.25]);
+    this.addSurface('metal', [6.45, 0.30, 0.90], [0, 3.35, -16.70]);
+    for (const side of [-1, 1]) {
+      this.addSurface('side', [0.34, 3.45, 1.55], [side * 3.05, 1.48, -16.48]);
+    }
+  }
+
+  /**
+   * Register a static box for physics and rendering.
+   * @param {string} kind Material identifier.
+   * @param {number[]} size Width, height, depth.
+   * @param {number[]} position World coordinates.
+   */
+  addSurface(kind, size, position) {
+    const C = this.C;
+    const body = new C.Body({
+      mass: 0,
+      material: this.surfaceMaterial,
+      shape: new C.Box(new C.Vec3(size[0] / 2, size[1] / 2, size[2] / 2)),
+      collisionFilterGroup: 1,
+      collisionFilterMask: 2 | 4
+    });
+    body.position.set(...position);
+    this.world.addBody(body);
+    this.surfaces.push({ kind, size, position });
+  }
+
+  /**
+   * Construct a pin whose body origin coincides with the calculated COM.
+   * Every collider is shifted DOWN relative to that origin. The rendered
+   * silhouette receives the same shift in the Three.js adapter.
+   * @param {number} x Home X.
+   * @param {number} z Home Z.
+   */
+  createPin(x, z) {
+    const C = this.C;
+    const center = this.pinCenterY;
+    const body = new C.Body({
+      mass: SETTINGS.pinMass,
+      material: this.pinMaterial,
+      linearDamping: SETTINGS.pinLinearDamping,
+      angularDamping: SETTINGS.pinAngularDamping,
+      allowSleep: true,
+      sleepSpeedLimit: 0.115,
+      sleepTimeLimit: 0.28,
+      collisionFilterGroup: 2,
+      collisionFilterMask: 1 | 2 | 4
+    });
+    // V25 keeps the cheap compound approximation instead of a convex polyhedron.
+    // It keeps the same mass/inertia model but removes the heaviest narrow-phase
+    // collision work on mobile devices.
+    body.addShape(new C.Cylinder(0.105, 0.125, 0.16, 8), new C.Vec3(0, 0.08 - center, 0));
+    body.addShape(new C.Sphere(0.245), new C.Vec3(0, 0.39 - center, 0));
+    body.addShape(new C.Sphere(0.205), new C.Vec3(0, 0.69 - center, 0));
+    body.addShape(new C.Cylinder(0.070, 0.090, 0.25, 8), new C.Vec3(0, 1.07 - center, 0));
+    body.addShape(new C.Sphere(0.130), new C.Vec3(0, 1.365 - center, 0));
+    body.position.set(x, center + SETTINGS.floorClearance, z);
+    this.applyPinInertia(body);
+    this.world.addBody(body);
+    this.pins.push({ body, home: { x, z }, stillTime: 0 });
+    this.pinIds.add(body.id);
+  }
+
+  /**
+   * Apply principal inertia around the COM, not the enclosing AABB's center.
+   * Call after each mass/type change because updateMassProperties overwrites it.
+   * @param {object} body Cannon rigid body.
+   */
+  applyPinInertia(body) {
+    body.updateMassProperties();
+    if (body.type !== this.C.Body.DYNAMIC || body.mass === 0) return;
+    const { inertiaX, inertiaY } = this.massProperties;
+    // V22: real mass is retained, but horizontal inertia is reduced to match the quicker tipping seen in real skittles.
+    const tippingInertia = inertiaX * 0.42;
+    body.inertia.set(tippingInertia, inertiaY, tippingInertia);
+    body.invInertia.set(1 / tippingInertia, 1 / inertiaY, 1 / tippingInertia);
+    body.updateInertiaWorld(true);
+  }
+
+  /**
+   * Observe collisions without inventing an additional impact impulse.
+   * @param {{body:object}} event Cannon collision event.
+   */
+  onBallCollision(event) {
+    if (this.shotActive && !this.gutter && this.pinIds.has(event.body.id)) {
+      this.hitPins.add(event.body.id);
+    }
+  }
+
+  /** Keep the launch ball fixed and visible while awaiting user input. */
+  resetBall() {
+    const body = this.ball;
+    body.type = this.C.Body.KINEMATIC;
+    body.mass = 0;
+    body.updateMassProperties();
+    body.position.set(0, SETTINGS.ballRadius + SETTINGS.floorClearance, SETTINGS.ballStartZ);
+    body.quaternion.set(0, 0, 0, 1);
+    body.velocity.setZero();
+    body.angularVelocity.setZero();
+    body.force.setZero();
+    body.torque.setZero();
+    body.collisionFilterMask = 0;
+    body.aabbNeedsUpdate = true;
+    body.wakeUp();
+    this.shotActive = false;
+    this.elapsed = 0;
+    this.quietTime = 0;
+    this.gutter = false;
+    this.ballAbsorbed = false;
+    this.hitPins.clear();
+  }
+
+  /**
+   * Hand the SAME ball to dynamic physics, with consistent rolling velocity.
+   * @param {{speed:number,side:number}} aim Launch velocity specification.
+   */
+  launch(aim) {
+    this.ball.type = this.C.Body.DYNAMIC;
+    this.ball.mass = SETTINGS.ballMass;
+    this.ball.updateMassProperties();
+    this.ball.collisionFilterMask = 1 | 2;
+    this.ball.velocity.set(aim.side, 0, -aim.speed);
+    this.ball.angularVelocity.set(-aim.speed / SETTINGS.ballRadius, 0, -aim.side / SETTINGS.ballRadius);
+    this.ball.wakeUp();
+    this.hitPins.clear();
+    this.gutter = false;
+    this.ballAbsorbed = false;
+    this.elapsed = 0;
+    this.quietTime = 0;
+    this.shotActive = true;
+  }
+
+  /**
+   * Advance physics. The pin-deck section is temporarily sub-stepped so the
+   * fast ball cannot tunnel through the relatively narrow pin colliders.
+   * Outside the deck the cheaper 60 Hz step is retained for mobile performance.
+   * @param {number} dt Fixed simulation step in seconds.
+   */
+  step(dt) {
+    if (this.shotActive && !this.gutter && this.hitPins.size === 0 && this.ball.position.z > -10.72) {
+      const predictedX = this.ball.position.x + this.ball.velocity.x * dt;
+      if (Math.abs(predictedX) > SETTINGS.laneHalfWidth + 0.02) {
+        this.gutter = true;
+        // Once the ball is in a gutter it can no longer contact pins.
+        this.ball.collisionFilterMask = 1;
+      }
+    }
+
+    // V25: one deterministic 60 Hz world step. The pin colliders are now simple,
+    // slightly fuller compounds, so a costly local micro-step pass is no longer needed.
+    this.world.step(dt);
+    this.constrainBallToTrack(dt);
+    this.keepBallMovingToPit();
+    this.settleStandingPins(dt);
+
+    if (this.shotActive && !this.ballAbsorbed && this.ball.position.z < SETTINGS.pitAbsorbZ) {
+      this.ballAbsorbed = true;
+      this.ball.velocity.setZero();
+      this.ball.angularVelocity.setZero();
+      this.ball.force.setZero();
+      this.ball.torque.setZero();
+      this.ball.collisionFilterMask = 0;
+      this.ball.type = this.C.Body.KINEMATIC;
+      this.ball.mass = 0;
+      this.ball.updateMassProperties();
+      this.ball.position.z = SETTINGS.pitAbsorbZ;
+      this.ball.aabbNeedsUpdate = true;
+    }
+    if (this.shotActive) this.elapsed += dt;
+    if (this.pinsAreQuiet()) this.quietTime += dt;
+    else this.quietTime = 0;
+  }
+
+  /**
+   * Keep the heavy nine-pin ball in rolling contact with the lane or gutter.
+   * Real balls may vibrate microscopically, but they do not climb over the pin
+   * bodies like a light arcade ball. Horizontal collision impulses are left to
+   * Cannon; only non-physical vertical launch energy is removed.
+   * @param {number} dt Fixed simulation step in seconds.
+   */
+  constrainBallToTrack(dt) {
+    if (!this.shotActive || this.ball.position.z < SETTINGS.trackConstraintEndZ) return;
+
+    const side = Math.sign(this.ball.position.x || this.ball.velocity.x || 1);
+    const gutterCenter = side * (SETTINGS.laneHalfWidth + SETTINGS.gutterWidth / 2);
+    const surfaceTop = this.gutter ? SETTINGS.gutterTopY : 0;
+    const targetY = surfaceTop + SETTINGS.ballRadius + SETTINGS.floorClearance;
+
+    // Maintain continuous rolling contact instead of allowing upward pin-ramping.
+    this.ball.position.y = targetY;
+    this.ball.velocity.y = 0;
+
+    if (this.gutter) {
+      // A real gutter channels the ball towards the pit. Dampen sideways motion
+      // and gently center it in the recessed channel while preserving forward speed.
+      const error = gutterCenter - this.ball.position.x;
+      this.ball.velocity.x += error * 7.0 * dt;
+      this.ball.velocity.x *= Math.max(0, 1 - 3.2 * dt);
+      this.ball.velocity.z = Math.min(this.ball.velocity.z, -SETTINGS.minForwardTravelSpeed);
+    }
+
+    this.ball.aabbNeedsUpdate = true;
+  }
+
+  /**
+   * Preserve forward travel until the ball reaches the pit. This represents the
+   * very low rolling resistance of the real lane and avoids visually implausible
+   * shots dying halfway down the lane. It never adds upward or sideways energy.
+   */
+  keepBallMovingToPit() {
+    if (!this.shotActive || this.ballAbsorbed) return;
+    if (this.ball.position.z <= SETTINGS.pitAbsorbZ) return;
+
+    // Do NOT inject forward velocity while the ball is inside the pin cluster.
+    // V20's unconditional minimum speed could make the ball look as if it were
+    // driving through a pin instead of transferring momentum to it. Keep the
+    // low-resistance assist only before the deck and after the ball has cleared it.
+    const beforeDeck = this.ball.position.z > -9.75;
+    const afterDeck = this.ball.position.z < -14.70;
+    if ((this.gutter || beforeDeck || afterDeck) && this.ball.velocity.z > -SETTINGS.minForwardTravelSpeed) {
+      this.ball.velocity.z = -SETTINGS.minForwardTravelSpeed;
+    }
+  }
+
+  /**
+   * Standing pins can receive tiny solver impulses from neighbouring contacts and
+   * appear to tremble indefinitely. If a pin is essentially upright and almost
+   * motionless for a short interval, put it to sleep. Falling/rolling pins are
+   * untouched because their tilt or velocity is above the thresholds.
+   * @param {number} dt Fixed simulation step in seconds.
+   */
+  settleStandingPins(dt) {
+    for (const pin of this.pins) {
+      const body = pin.body;
+      // Y component of the rotated up vector, derived directly from quaternion.
+      // This avoids allocating a temporary Vec3 for every pin on every physics step.
+      const q = body.quaternion;
+      const upY = 1 - 2 * (q.x * q.x + q.z * q.z);
+      const v = body.velocity;
+      const w = body.angularVelocity;
+      const linearQuiet = (v.x*v.x + v.y*v.y + v.z*v.z) < 0.0090;
+      const angularQuiet = (w.x*w.x + w.y*w.y + w.z*w.z) < 0.0156;
+      if (upY > 0.992 && linearQuiet && angularQuiet) {
+        pin.stillTime = (pin.stillTime || 0) + dt;
+        if (pin.stillTime >= 0.10) {
+          body.velocity.setZero();
+          body.angularVelocity.setZero();
+          body.force.setZero();
+          body.torque.setZero();
+          body.sleep();
+        }
+      } else {
+        pin.stillTime = 0;
+      }
+    }
+  }
+
+  /** @returns {boolean} Whether all pin velocities are small enough to settle. */
+  pinsAreQuiet() {
+    for (const { body } of this.pins) {
+      if (body.velocity.length() > 0.10 || body.angularVelocity.length() > 0.16) return false;
+    }
+    return true;
+  }
+
+  /** @returns {boolean} Whether the roll and visible collision reactions have finished. */
+  isShotFinished() {
+    if (!this.shotActive) return false;
+    const position = this.ball.position;
+    const reachedPit = this.ballAbsorbed || position.z < SETTINGS.pitAbsorbZ;
+    const out = position.y < -1.5 || Math.abs(position.x) > 4.0;
+    const noPinHit = this.hitPins.size === 0;
+    const hardTimeout = noPinHit ? SETTINGS.noHitHardTimeout : SETTINGS.hitHardTimeout;
+    // The ball is not considered finished merely because it slows down. It keeps
+    // travelling to the pit; only the pit, a true out-of-bounds state, or a safety
+    // timeout can end the rolling phase.
+    const travelFinished = reachedPit || out || this.elapsed > hardTimeout;
+
+    if (!travelFinished) return false;
+    // Misses can resolve immediately. After a hit, leave a short window for
+    // secondary pin-to-pin collisions before enabling the next action.
+    return noPinHit || this.quietTime >= 0.42 || this.elapsed > SETTINGS.hitHardTimeout;
+  }
+
+  /**
+   * End scoring and freeze the now-settled pin field in its current pose.
+   * isShotFinished() only reaches this point after the complete pin field has
+   * been quiet for a short interval, so converting the bodies to kinematic here
+   * removes the final solver micro-jitter without interrupting visible motion.
+   */
+  finishShot() {
+    this.shotActive = false;
+    for (const { body } of this.pins) {
+      body.velocity.setZero();
+      body.angularVelocity.setZero();
+      body.force.setZero();
+      body.torque.setZero();
+      body.type = this.C.Body.KINEMATIC;
+      body.mass = 0;
+      body.updateMassProperties();
+      body.aabbNeedsUpdate = true;
+      body.sleep();
+    }
+  }
+
+  /**
+   * Reposition pins ONLY inside the covered pinsetter phase.
+   * This method is never called by collisions, sleeping or score evaluation.
+   */
+  placePinsUnderSetter() {
+    for (const { body, home } of this.pins) {
+      body.type = this.C.Body.KINEMATIC;
+      body.mass = 0;
+      body.updateMassProperties();
+      body.position.set(home.x, this.pinCenterY + SETTINGS.floorClearance, home.z);
+      body.quaternion.set(0, 0, 0, 1);
+      body.velocity.setZero();
+      body.angularVelocity.setZero();
+      body.force.setZero();
+      body.torque.setZero();
+      body.aabbNeedsUpdate = true;
+      body.wakeUp();
+    }
+  }
+
+  /** Release upright pins only after the setter has cleared the deck. */
+  releasePins() {
+    for (const { body } of this.pins) {
+      body.type = this.C.Body.DYNAMIC;
+      body.mass = SETTINGS.pinMass;
+      this.applyPinInertia(body);
+      body.velocity.setZero();
+      body.angularVelocity.setZero();
+      body.wakeUp();
+    }
+  }
+}
+
+
+
+/**
+ * Browser controller. Physics, scoring and the intentional pinsetter operation
+ * have separate states. A completed throw never automatically uprights pins.
+ */
+class BowlingApp {
+  /** @param {object} three Three.js namespace. @param {object} cannon Cannon namespace. @param {import('./player-session.js').PlayerDrawSession} playerSession Verified player session. */
+  constructor(three, cannon, playerSession) {
+    this.T = three;
+    this.playerSession = playerSession;
+    this.physics = new BowlingPhysics(cannon);
+    this.mode = 'ready';
+    this.pointerId = null;
+    this.dragStart = null;
+    this.aim = null;
+    this.accumulator = 0;
+    this.previousFrame = null;
+    this.setterTime = 0;
+    this.didPlacePins = false;
+    this.drawNumber = 0;
+    this.lastShotMissed = false;
+    this.ui = {};
+    for (const id of ['app', 'status', 'hintTitle', 'hintText', 'power', 'result', 'resultLabel', 'resultValue', 'aim', 'marker', 'next', 'date-1', 'date-2', 'date-3', 'date-row-1', 'date-row-2', 'date-row-3']) {
+      this.ui[id] = document.getElementById(id);
+    }
+    this.buildScene();
+    this.buildEnvironment();
+    this.buildPins();
+    this.buildBall();
+    this.buildSetter();
+    this.buildGuide();
+    this.resize = this.resize.bind(this);
+    this.tick = this.tick.bind(this);
+    this.onPointerDown = this.onPointerDown.bind(this);
+    this.onPointerMove = this.onPointerMove.bind(this);
+    this.onPointerUp = this.onPointerUp.bind(this);
+    this.onKeyDown = this.onKeyDown.bind(this);
+    this.cancelAim = this.cancelAim.bind(this);
+    this.startNextThrow = this.startNextThrow.bind(this);
+    this.onVisibilityChange = this.onVisibilityChange.bind(this);
+    this.onContextLost = this.onContextLost.bind(this);
+    this.resize();
+    this.bindEvents();
+    this.setReady();
+    this.sync();
+    requestAnimationFrame(this.tick);
+  }
+
+  /** Set up the existing camera style, without any overhead occluding ceiling. */
+  buildScene() {
+    const T = this.T;
+    this.scene = new T.Scene();
+    this.scene.background = new T.Color(0x17120f);
+    this.scene.fog = new T.Fog(0x17120f, 21, 42);
+    this.camera = new T.PerspectiveCamera(55, 1, 0.1, 80);
+    this.renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    this.renderer.domElement.tabIndex = 0;
+    this.renderer.domElement.setAttribute('role', 'button');
+    this.renderer.domElement.setAttribute('aria-label', 'Kegelbahn. Kugel mit Maus oder Finger zurückziehen und loslassen. Mit Enter oder Leertaste gerade werfen.');
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, innerWidth < 760 ? 1.55 : 1.80));
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = T.PCFShadowMap;
+    this.renderer.outputColorSpace = T.SRGBColorSpace;
+    this.renderer.toneMapping = T.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.08;
+    // V27: full MSAA on mobile plus moderate supersampling. Physics remains unchanged.
+    this.ui.app.appendChild(this.renderer.domElement);
+    this.scene.add(new T.HemisphereLight(0xffeed2, 0x261d19, 1.75));
+    const key = new T.DirectionalLight(0xffe6bf, 3.6);
+    key.position.set(-4, 10, 3);
+    key.target.position.set(0, 0, -7);
+    key.castShadow = true;
+    key.shadow.mapSize.set(innerWidth < 760 ? 384 : 512, innerWidth < 760 ? 384 : 512);
+    Object.assign(key.shadow.camera, { left: -8, right: 8, top: 15, bottom: -15, near: 0.5, far: 45 });
+    key.shadow.normalBias = 0.012;
+    this.scene.add(key, key.target);
+    const rear = new T.PointLight(0xffbd78, 24, 14, 2);
+    rear.position.set(2.8, 3.5, -13.5);
+    this.scene.add(rear);
+  }
+
+  /** Render each physical surface from the same dimensions as its collider. */
+  buildEnvironment() {
+    const T = this.T;
+    const materials = {
+      wood: new T.MeshStandardMaterial({ color: 0xb97c45, roughness: 0.44 }),
+      side: new T.MeshStandardMaterial({ color: 0x5a3524, roughness: 0.74 }),
+      gutter: new T.MeshStandardMaterial({ color: 0x76777a, roughness: 0.42, metalness: 0.28 }),
+      rubber: new T.MeshStandardMaterial({ color: 0x121314, roughness: 0.95 }),
+      metal: new T.MeshStandardMaterial({ color: 0x686d72, roughness: 0.33, metalness: 0.72 })
+    };
+    this.materials = materials;
+    for (const surface of this.physics.surfaces) {
+      const mesh = new T.Mesh(new T.BoxGeometry(...surface.size), materials[surface.kind]);
+      mesh.position.set(...surface.position);
+      mesh.receiveShadow = true;
+      mesh.castShadow = surface.kind === 'metal';
+      this.scene.add(mesh);
+    }
+    const jointMaterial = new T.MeshStandardMaterial({ color: 0x7c4728, roughness: 0.7, transparent: true, opacity: 0.20 });
+    const jointGeometry = new T.BoxGeometry(0.009, 0.004, 21);
+    for (let x = -1.75; x <= 1.75; x += 0.25) {
+      const joint = new T.Mesh(jointGeometry, jointMaterial);
+      joint.position.set(x, 0.003, -4.2);
+      this.scene.add(joint);
+    }
+    // Continuous impact curtain like the supplied real-lane reference. The
+    // narrow seams are only surface detail; there are no gaps between panels.
+    const curtain = new T.Mesh(
+      new T.BoxGeometry(5.85, 3.10, 0.12),
+      new T.MeshStandardMaterial({ color: 0x0d0e0f, roughness: 0.99 })
+    );
+    curtain.position.set(0, 1.47, -17.10);
+    curtain.receiveShadow = true;
+    this.scene.add(curtain);
+    const seamMaterial = new T.MeshBasicMaterial({ color: 0x242424, transparent: true, opacity: 0.22 });
+    const seamGeometry = new T.BoxGeometry(0.012, 3.00, 0.008);
+    for (let x = -2.65; x <= 2.65; x += 0.38) {
+      const seam = new T.Mesh(seamGeometry, seamMaterial);
+      seam.position.set(x, 1.47, -17.035);
+      this.scene.add(seam);
+    }
+    const catcherTop = new T.Mesh(new T.BoxGeometry(6.45, 0.38, 1.05), materials.metal);
+    catcherTop.position.set(0, 3.28, -16.68);
+    catcherTop.castShadow = true;
+    this.scene.add(catcherTop);
+    for (const side of [-1, 1]) {
+      const panel = new T.Mesh(new T.BoxGeometry(0.38, 3.25, 1.65), materials.side);
+      panel.position.set(side * 3.02, 1.45, -16.47);
+      panel.castShadow = true;
+      panel.receiveShadow = true;
+      this.scene.add(panel);
+    }
+    this.buildStandPlates();
+    this.buildLogo();
+  }
+
+  /**
+   * Render the nine flush stand plates at the exact regulated pin centres.
+   * They make the 1-2-3-2-1 diamond readable without adding gameplay rails.
+   */
+  buildStandPlates() {
+    const T = this.T;
+    const material = new T.MeshStandardMaterial({
+      color: 0x6d655d,
+      roughness: 0.48,
+      metalness: 0.38
+    });
+    const geometry = new T.CylinderGeometry(0.108, 0.108, 0.006, 28);
+    for (const [x, z] of PIN_HOMES) {
+      const plate = new T.Mesh(geometry, material);
+      plate.position.set(x, 0.005, z);
+      plate.receiveShadow = true;
+      this.scene.add(plate);
+    }
+  }
+
+  /** Keep the placeholder as a low-contrast texture on the lane surface. */
+  buildLogo() {
+    const T = this.T;
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 256;
+    const context = canvas.getContext('2d');
+    context.fillStyle = 'rgba(69,35,19,.18)';
+    context.font = '800 112px system-ui';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText('PUMPERELLA', 512, 128);
+    const texture = new T.CanvasTexture(canvas);
+    texture.colorSpace = T.SRGBColorSpace;
+    const logo = new T.Mesh(new T.PlaneGeometry(3.4, 0.85), new T.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false }));
+    logo.rotation.x = -Math.PI / 2;
+    logo.position.set(0, 0.008, -3.6);
+    this.scene.add(logo);
+  }
+
+  /** Shift the visible foot-relative pin by exactly the same COM as physics. */
+  buildPins() {
+    const T = this.T;
+    // V27 increases VISUAL mesh quality only. The cheap physics colliders are deliberately
+    // untouched, so the performance improvement from V24 remains intact. All nine pins
+    // share one geometry and two materials, keeping the GPU memory cost low.
+    const controlPoints = PIN_PROFILE.map(([radius, y]) => new T.Vector3(radius, y, 0));
+    const contour = new T.CatmullRomCurve3(controlPoints, false, 'centripetal');
+    const sampled = contour.getPoints(144).map(point => new T.Vector2(Math.max(0, point.x), point.y));
+
+    // Preserve a flat foot while smoothing the entire visible side contour.
+    const points = [
+      new T.Vector2(0, 0),
+      new T.Vector2(PIN_PROFILE[0][0], 0),
+      ...sampled.slice(1)
+    ];
+
+    // 128 radial segments remove the obvious polygonal silhouette from V25. Because the
+    // geometry is shared by all pins, this is substantially cheaper than increasing physics
+    // fidelity or adding per-pin subdivision.
+    const geometry = new T.LatheGeometry(points, 128);
+    geometry.computeVertexNormals();
+    geometry.computeBoundingSphere();
+
+    const material = new T.MeshStandardMaterial({
+      color: 0xf5f0e7,
+      roughness: 0.27,
+      metalness: 0.0
+    });
+    const stripeMaterial = new T.MeshStandardMaterial({
+      color: 0xb52d25,
+      roughness: 0.34,
+      metalness: 0.0
+    });
+    const stripeGeometry = new T.CylinderGeometry(0.111, 0.108, 0.045, 96, 1, true);
+
+    this.pinMeshes = [];
+    for (const pin of this.physics.pins) {
+      const root = new T.Group();
+      const visual = new T.Group();
+      visual.position.y = -this.physics.pinCenterY;
+      const mesh = new T.Mesh(geometry, material);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      visual.add(mesh);
+
+      // Two high-resolution rings matching the supplied reference pin.
+      const stripe = new T.Mesh(stripeGeometry, stripeMaterial);
+      stripe.position.y = 1.115;
+      stripe.castShadow = true;
+      visual.add(stripe);
+      const stripe2 = stripe.clone();
+      stripe2.position.y = 1.205;
+      visual.add(stripe2);
+
+      root.add(visual);
+      this.scene.add(root);
+      this.pinMeshes.push({ mesh: root, body: pin.body });
+    }
+  }
+
+  /** Create one visible ball; never substitute a marker for the mesh. */
+  buildBall() {
+    const T = this.T;
+    const material = new T.MeshStandardMaterial({ color: 0x7b2535, roughness: 0.20, metalness: 0.08 });
+    this.ballMesh = new T.Mesh(new T.SphereGeometry(SETTINGS.ballRadius, 72, 48), material);
+    this.ballMesh.castShadow = true;
+    this.ballMesh.receiveShadow = true;
+    this.scene.add(this.ballMesh);
+  }
+
+  /** A single hood covers the deck before any pin is repositioned. */
+  buildSetter() {
+    const T = this.T;
+    this.setter = new T.Group();
+    const top = new T.Mesh(new T.BoxGeometry(4.65, 0.20, 4.35), this.materials.metal);
+    top.castShadow = true;
+    const front = new T.Mesh(new T.BoxGeometry(4.65, 1.60, 0.16), this.materials.rubber);
+    front.position.set(0, -0.84, 2.05);
+    front.castShadow = true;
+    this.setter.add(top, front);
+    this.setter.position.set(0, 4.75, PIN_DECK.frontZ - 2 * PIN_DECK.rowStepZ);
+    this.scene.add(this.setter);
+  }
+
+  /** A world-space guide shows the actual launch direction, not the pull vector. */
+  buildGuide() {
+    const T = this.T;
+    const geometry = new T.BufferGeometry();
+    geometry.setAttribute('position', new T.BufferAttribute(new Float32Array(6), 3));
+    this.guide = new T.Line(geometry, new T.LineDashedMaterial({ color: 0xffe3a8, dashSize: 0.22, gapSize: 0.14, transparent: true, opacity: 0.85 }));
+    this.guide.visible = false;
+    this.guide.frustumCulled = false;
+    this.scene.add(this.guide);
+  }
+
+  /** Bind named handlers; cancellation must never release a shot. */
+  bindEvents() {
+    const canvas = this.renderer.domElement;
+    canvas.addEventListener('pointerdown', this.onPointerDown);
+    canvas.addEventListener('pointermove', this.onPointerMove);
+    canvas.addEventListener('pointerup', this.onPointerUp);
+    canvas.addEventListener('pointercancel', this.cancelAim);
+    canvas.addEventListener('lostpointercapture', this.cancelAim);
+    canvas.addEventListener('keydown', this.onKeyDown);
+    canvas.addEventListener('webglcontextlost', this.onContextLost);
+    this.ui.next.addEventListener('click', this.startNextThrow);
+    window.addEventListener('resize', this.resize);
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
+  }
+
+  /** Reframe only on resize; preserve room below the ball at every aspect ratio. */
+  resize() {
+    if (this.mode === 'aiming') this.cancelAim();
+    const width = this.ui.app.clientWidth;
+    const height = this.ui.app.clientHeight;
+    const portrait = height > width * 1.25;
+    this.camera.fov = portrait ? 55 : 46;
+    this.camera.position.set(0, portrait ? 5.65 : 5.75, portrait ? 11.7 : 12.7);
+    this.camera.lookAt(0, portrait ? 0.24 : 0.30, portrait ? -6.15 : -6.9);
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
+    this.camera.updateMatrixWorld();
+    this.renderer.setSize(width, height, false);
+  }
+
+  /** @returns {{x:number,y:number,radius:number}} Ball position in CSS pixels. */
+  ballScreen() {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const position = this.ballMesh.position.clone().project(this.camera);
+    const edge = this.ballMesh.position.clone();
+    edge.x += SETTINGS.ballRadius;
+    edge.project(this.camera);
+    return {
+      x: rect.left + (position.x + 1) * rect.width / 2,
+      y: rect.top + (1 - position.y) * rect.height / 2,
+      radius: Math.abs(edge.x - position.x) * rect.width / 2
+    };
+  }
+
+  /** Show ready state without resetting any pin orientation. */
+  setReady() {
+    this.mode = 'ready';
+    this.ui.status.textContent = 'Bereit';
+    this.ui.hintTitle.textContent = 'Kugel ber\u00fchren, zur\u00fcckziehen und loslassen';
+    this.ui.hintText.textContent = 'Nach unten ziehen = Kraft. Seitlich ziehen = Richtung. Enter oder Leertaste wirft geradeaus.';
+    this.ui.power.style.width = '0%';
+    this.ui.result.className = 'result';
+    this.ui.next.hidden = true;
+    document.body.classList.remove('is-aiming');
+  }
+
+  /** @param {PointerEvent} event Start a drag only on the visible launch ball. */
+  onPointerDown(event) {
+    if (this.mode !== 'ready' || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    const ball = this.ballScreen();
+    if (Math.hypot(event.clientX - ball.x, event.clientY - ball.y) > Math.max(42, ball.radius + 14)) return;
+    this.mode = 'aiming';
+    this.pointerId = event.pointerId;
+    this.dragStart = { x: event.clientX, y: event.clientY };
+    this.pullLimit = getPullLimit(event.clientY, this.ui.app.clientHeight);
+    this.renderer.domElement.setPointerCapture(event.pointerId);
+    document.body.classList.add('is-aiming');
+    this.updateAim(event.clientX, event.clientY);
+    event.preventDefault();
+  }
+
+  /** @param {PointerEvent} event Update the active pointer only. */
+  onPointerMove(event) {
+    if (this.mode === 'aiming' && event.pointerId === this.pointerId) {
+      this.updateAim(event.clientX, event.clientY);
+    }
+  }
+
+  /** @param {number} x Pointer X. @param {number} y Pointer Y. */
+  updateAim(x, y) {
+    const dx = x - this.dragStart.x;
+    const dy = y - this.dragStart.y;
+    this.aim = calculateAim(dx, dy, this.pullLimit);
+    const ball = this.ballScreen();
+    const endX = x - ball.x;
+    const endY = y - ball.y;
+    this.ui.aim.style.display = 'block';
+    this.ui.aim.style.left = `${ball.x}px`;
+    this.ui.aim.style.top = `${ball.y}px`;
+    this.ui.aim.style.width = `${Math.hypot(endX, endY)}px`;
+    this.ui.aim.style.transform = `rotate(${Math.atan2(endY, endX)}rad)`;
+    const percent = Math.round(this.aim.power * 100);
+    this.ui.power.style.width = `${percent}%`;
+    this.ui.status.textContent = `Kraft ${percent} %`;
+    const direction = this.aim.side < -0.3 ? 'Links' : this.aim.side > 0.3 ? 'Rechts' : 'Gerade';
+    this.ui.hintTitle.textContent = `${direction} \u00b7 ${percent} %`;
+    this.ui.hintText.textContent = 'Loslassen zum Werfen.';
+    const line = this.guide.geometry.attributes.position;
+    const distance = 7;
+    const norm = Math.hypot(this.aim.side, this.aim.speed);
+    line.setXYZ(0, 0, 0.018, SETTINGS.ballStartZ - 0.3);
+    line.setXYZ(1, this.aim.side / norm * distance, 0.018, SETTINGS.ballStartZ - 0.3 - this.aim.speed / norm * distance);
+    line.needsUpdate = true;
+    this.guide.computeLineDistances();
+    this.guide.visible = true;
+  }
+
+  /** @param {PointerEvent} event Launch only on a real pointer-up event. */
+  onPointerUp(event) {
+    if (this.mode !== 'aiming' || event.pointerId !== this.pointerId) return;
+    this.updateAim(event.clientX, event.clientY);
+    const aim = this.aim;
+    this.endPointer();
+    if (!aim.canLaunch) { this.setReady(); return; }
+    this.launchAim(aim);
+  }
+
+  /** Launches one validated aim and updates the shared rolling UI state.
+   * @param {{speed:number,side:number}} aim Launch velocity.
+   */
+  launchAim(aim) {
+    this.mode = 'rolling';
+    this.physics.launch(aim);
+    this.ui.status.textContent = 'Kugel rollt';
+    this.ui.hintTitle.textContent = 'Wurf läuft';
+    this.ui.hintText.textContent = 'Treffer zieht einen Termin. Gosse oder kein Kegeltreffer verbrauchen keinen Termin.';
+  }
+
+  /** Keyboard-accessible straight throw with a fixed, playable power level.
+   * @param {KeyboardEvent} event Keyboard event from the canvas.
+   */
+  onKeyDown(event) {
+    if (this.mode !== 'ready' || (event.key !== 'Enter' && event.key !== ' ')) return;
+    event.preventDefault();
+    const power = 0.68;
+    const speed = SETTINGS.minLaunchSpeed + power * (SETTINGS.maxLaunchSpeed - SETTINGS.minLaunchSpeed);
+    this.launchAim({ speed, side: 0 });
+  }
+
+  /** Clear capture after changing state, so lostpointercapture cannot fire a shot. */
+  endPointer() {
+    const id = this.pointerId;
+    this.pointerId = null;
+    this.mode = 'ready';
+    if (id !== null && this.renderer.domElement.hasPointerCapture(id)) {
+      this.renderer.domElement.releasePointerCapture(id);
+    }
+    this.ui.aim.style.display = 'none';
+    this.guide.visible = false;
+    document.body.classList.remove('is-aiming');
+  }
+
+  /** Cancel input on interrupts, resize or pointer cancellation. */
+  cancelAim() {
+    if (this.mode !== 'aiming') return;
+    this.endPointer();
+    this.setReady();
+  }
+
+  /** Pause elapsed frame time when the page is hidden. */
+  onVisibilityChange() {
+    if (document.hidden) this.cancelAim();
+    this.previousFrame = null;
+    this.accumulator = 0;
+  }
+
+  /** @param {Event} event Expose a real graphics failure instead of a false ready state. */
+  onContextLost(event) {
+    event.preventDefault();
+    this.mode = 'error';
+    this.ui.status.textContent = 'Grafik angehalten';
+    this.ui.hintTitle.textContent = 'Die Grafikverbindung wurde unterbrochen';
+    this.ui.hintText.textContent = 'Bitte die Seite neu laden.';
+  }
+
+  /**
+   * Reveals the next authenticated date. A miss never calls this method.
+   * @returns {Promise<string>} Drawn date as display text.
+   */
+  async drawDate() {
+    const value = await this.playerSession.drawDate();
+    if (typeof value !== 'string' || !value.trim()) {
+      throw new TypeError('Player session must return a non-empty date string.');
+    }
+    return value;
+  }
+
+  /** Resolve a finished shot once; never reset pins from a result timer. */
+  async completeShot() {
+    if (this.mode !== 'rolling') return;
+    this.mode = 'resolving';
+    this.physics.finishShot();
+    const missed = this.physics.gutter || this.physics.hitPins.size === 0;
+    this.lastShotMissed = missed;
+    if (missed) {
+      this.ui.result.className = 'result show gutter';
+      this.ui.resultLabel.textContent = this.physics.gutter ? 'Gosse' : 'Kein Kegel getroffen';
+      this.ui.resultValue.textContent = 'Versuch wiederholen';
+      this.ui.status.textContent = 'Fehlwurf';
+      this.ui.hintTitle.textContent = 'Kein Datum gezogen';
+      this.ui.hintText.textContent = 'Der Versuch bleibt offen.';
+      this.ui.next.textContent = 'Erneut versuchen';
+    } else {
+      try {
+        const date = await this.drawDate();
+        this.drawNumber += 1;
+        this.ui[\`date-\${this.drawNumber}\`].textContent = date;
+        this.ui[\`date-row-\${this.drawNumber}\`].className = 'revealed';
+        this.ui.result.className = 'result show date';
+        this.ui.resultLabel.textContent = \`Termin \${this.drawNumber} von 3\`;
+        this.ui.resultValue.textContent = date;
+        this.ui.status.textContent = 'Wurf beendet';
+        this.ui.hintTitle.textContent = 'Die Kegel bleiben liegen';
+        this.ui.hintText.textContent = 'Erst beim nächsten Wurf stellt das Stellwerk sie neu auf.';
+        this.ui.next.textContent = 'Nächster Wurf';
+      } catch (error) {
+        console.error('Date resolution failed:', error);
+        this.mode = 'error';
+        this.ui.status.textContent = 'Ziehung pr\u00fcfen';
+        this.ui.hintTitle.textContent = 'Das Datum konnte nicht best\u00e4tigt werden';
+        this.ui.hintText.textContent = 'Kein automatischer zweiter Ziehversuch. Bitte den Anwendungsstatus pr\u00fcfen.';
+        return;
+      }
+    }
+    if (!missed && !this.playerSession.hasRemainingDates()) {
+      this.mode = 'complete';
+      this.ui.next.hidden = true;
+      this.ui.status.textContent = 'Fertig';
+      this.ui.hintTitle.textContent = 'Alle drei Termine sind gezogen';
+      this.ui.hintText.textContent = 'Die Termine bleiben oben links sichtbar.';
+      return;
+    }
+
+    this.mode = 'result';
+    this.ui.next.hidden = false;
+  }
+
+  /** Only the explicit next-throw button may start the pinsetter. */
+  startNextThrow() {
+    if (this.mode !== 'result') return;
+
+    // A gutter or a ball that dies before touching a pin changes no pin state,
+    // so repeating should be immediate and must not run the pinsetter cycle.
+    if (this.lastShotMissed) {
+      // finishShot freezes the quiet pin field to eliminate residual solver
+      // jitter. A miss does not run the setter, so restore those same poses as
+      // dynamic bodies before the repeated throw.
+      this.physics.releasePins();
+      this.physics.resetBall();
+      this.lastShotMissed = false;
+      this.setReady();
+      return;
+    }
+
+    this.mode = 'setting';
+    this.setterTime = 0;
+    this.didPlacePins = false;
+    this.ui.next.hidden = true;
+    this.ui.result.className = 'result';
+    this.ui.status.textContent = 'Stellwerk';
+    this.ui.hintTitle.textContent = 'Kegel werden neu aufgestellt';
+    this.ui.hintText.textContent = 'Die Kugel liegt danach vorne wieder bereit.';
+    this.physics.ball.collisionFilterMask = 0;
+  }
+
+  /** @param {number} dt Advance the covered reset using simulation time, not timers. */
+  updateSetter(dt) {
+    this.setterTime += dt;
+    const t = this.setterTime;
+    const up = 4.75;
+    const down = 1.72;
+    let fraction;
+    if (t < 0.85) {
+      fraction = t / 0.85;
+      const eased = fraction * fraction * (3 - 2 * fraction);
+      this.setter.position.y = up + (down - up) * eased;
+    } else if (t < 1.20) {
+      this.setter.position.y = down;
+      if (!this.didPlacePins) {
+        this.physics.placePinsUnderSetter();
+        this.didPlacePins = true;
+      }
+    } else {
+      fraction = Math.min(1, (t - 1.20) / 1.00);
+      const eased = fraction * fraction * (3 - 2 * fraction);
+      this.setter.position.y = down + (up - down) * eased;
+      if (fraction >= 1) {
+        this.physics.releasePins();
+        this.physics.resetBall();
+        this.setReady();
+      }
+    }
+  }
+
+  /** Copy body poses; never modify physics from the rendering path. */
+  sync() {
+    this.ballMesh.visible = !this.physics.ballAbsorbed;
+    this.ballMesh.position.copy(this.physics.ball.position);
+    this.ballMesh.quaternion.copy(this.physics.ball.quaternion);
+    for (const pin of this.pinMeshes) {
+      pin.mesh.position.copy(pin.body.position);
+      pin.mesh.quaternion.copy(pin.body.quaternion);
+    }
+    const show = this.mode === 'ready';
+    this.ui.marker.style.display = show ? 'block' : 'none';
+    if (show) {
+      const ball = this.ballScreen();
+      const diameter = Math.max(70, ball.radius * 2 + 16);
+      this.ui.marker.style.width = `${diameter}px`;
+      this.ui.marker.style.height = `${diameter}px`;
+      this.ui.marker.style.margin = `${-diameter / 2}px 0 0 ${-diameter / 2}px`;
+      this.ui.marker.style.left = `${ball.x}px`;
+      this.ui.marker.style.top = `${ball.y}px`;
+    }
+  }
+
+  /** @param {number} now requestAnimationFrame timestamp in milliseconds. */
+  tick(now) {
+    requestAnimationFrame(this.tick);
+    if (document.hidden || this.mode === 'error') return;
+    const dt = this.previousFrame === null ? 0 : Math.min((now - this.previousFrame) / 1000, 0.040);
+    this.previousFrame = now;
+    // V25 keeps one 60 Hz physics step and at most two catch-up steps.
+    // This caps CPU work after slow frames instead of creating a feedback loop of lag.
+    this.accumulator = Math.min(this.accumulator + dt, SETTINGS.fixedStep * SETTINGS.maxSubsteps);
+    let steps = 0;
+    while (this.accumulator >= SETTINGS.fixedStep && steps < SETTINGS.maxSubsteps) {
+      this.physics.step(SETTINGS.fixedStep);
+      if (this.mode === 'setting') this.updateSetter(SETTINGS.fixedStep);
+      this.accumulator -= SETTINGS.fixedStep;
+      steps += 1;
+    }
+    if (steps === SETTINGS.maxSubsteps && this.accumulator >= SETTINGS.fixedStep) {
+      this.accumulator = SETTINGS.fixedStep * 0.5;
+    }
+    if (this.mode === 'rolling') {
+      if (this.physics.gutter) this.ui.status.textContent = 'Gosse';
+      if (this.physics.isShotFinished()) void this.completeShot();
+    }
+    this.sync();
+    this.renderer.render(this.scene, this.camera);
+  }
+}
+
+/** Verify the player link first, then load the pinned 3D runtime. */
+async function boot() {
+  try {
+    const playerSession = await createPlayerSession();
+    document.getElementById('status').textContent = 'Lade 3D-Bahn';
+    const [three, cannon] = await Promise.all([
+      import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js'),
+      import('https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js'),
+    ]);
+    new BowlingApp(three, cannon, playerSession);
+  } catch (error) {
+    console.error('Pumperella startup failed:', error);
+    document.getElementById('status').textContent = 'Nicht spielbereit';
+    document.getElementById('hintTitle').textContent = 'Spiel konnte nicht gestartet werden';
+    document.getElementById('hintText').textContent = error instanceof Error ? error.message : String(error);
+    document.getElementById('marker').style.display = 'none';
+  }
+}
+void boot();
+
+</script>
 </body>
 </html>
