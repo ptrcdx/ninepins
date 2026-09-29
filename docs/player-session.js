@@ -3,14 +3,15 @@ const APPLICATION_TIME_ZONE = "Europe/Berlin";
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/u;
 const PROGRESS_SCHEMA_VERSION = 1;
 const PROGRESS_STORAGE_PREFIX = "pumperella.playerProgress.v1";
+const MAX_PLAYER_NAME_LENGTH = 80;
 
 /**
- * Holds the verified, immutable dates for one player and reveals them sequentially.
- * Progress is persisted by drawId when a browser Storage implementation is provided.
+ * Holds the verified, immutable player assignment and reveals dates
+ * sequentially. Progress is persisted by drawId when browser storage exists.
  */
 export class PlayerDrawSession {
   /**
-   * @param {{drawId: string, dates: string[]}} verifiedDraw Authenticated draw payload.
+   * @param {{drawId:string,dates:string[],playerName?:string|null}} verifiedDraw Authenticated assignment.
    * @param {{getItem:(key:string)=>string|null,setItem:(key:string,value:string)=>void}|null} [storage=null] Persistent storage adapter.
    */
   constructor(verifiedDraw, storage = null) {
@@ -19,9 +20,15 @@ export class PlayerDrawSession {
 
     this.drawId = verifiedDraw.drawId;
     this.dates = Object.freeze([...verifiedDraw.dates]);
+    this.playerName = normalizeOptionalPlayerName(verifiedDraw.playerName);
     this.storage = storage;
     this.storageKey = `${PROGRESS_STORAGE_PREFIX}.${this.drawId}`;
     this.revealedCount = this.readPersistedCount();
+  }
+
+  /** @returns {string|null} Authenticated player name or null for legacy links. */
+  getPlayerName() {
+    return this.playerName;
   }
 
   /** @returns {boolean} Whether another successful throw can reveal a date. */
@@ -41,11 +48,7 @@ export class PlayerDrawSession {
       .map((date) => formatApplicationDate(date));
   }
 
-  /**
-   * Reveals exactly one further date and persists the new progress before returning it.
-   *
-   * @returns {Promise<string>} Localized display date.
-   */
+  /** @returns {Promise<string>} The next localized date. */
   async drawDate() {
     this.synchronizeFromStorage();
 
@@ -60,13 +63,15 @@ export class PlayerDrawSession {
     return formatApplicationDate(isoDate);
   }
 
-  /** Synchronizes forward-only progress when the same draw is open in another tab. */
+  /** Synchronizes forward-only progress with another tab. */
   synchronizeFromStorage() {
-    const persistedCount = this.readPersistedCount();
-    this.revealedCount = Math.max(this.revealedCount, persistedCount);
+    this.revealedCount = Math.max(
+      this.revealedCount,
+      this.readPersistedCount(),
+    );
   }
 
-  /** @returns {number} Valid persisted progress or zero for missing/invalid state. */
+  /** @returns {number} Valid persisted progress or zero. */
   readPersistedCount() {
     if (!this.storage) {
       return 0;
@@ -88,26 +93,23 @@ export class PlayerDrawSession {
       ) {
         return 0;
       }
-
       return state.revealedCount;
     } catch {
       return 0;
     }
   }
 
-  /**
-   * Persists progress monotonically. Storage errors never corrupt the in-memory game state.
-   *
-   * @param {number} requestedCount Progress after the latest successful throw.
-   */
+  /** @param {number} requestedCount Progress after the latest hit. */
   persistCount(requestedCount) {
     if (!this.storage) {
       return;
     }
 
     try {
-      const persistedCount = this.readPersistedCount();
-      const revealedCount = Math.max(requestedCount, persistedCount);
+      const revealedCount = Math.max(
+        requestedCount,
+        this.readPersistedCount(),
+      );
       this.storage.setItem(
         this.storageKey,
         JSON.stringify({
@@ -117,34 +119,51 @@ export class PlayerDrawSession {
         }),
       );
     } catch {
-      // Browsers can deny storage in restricted privacy modes. Gameplay remains usable,
-      // but persistence across reloads cannot be guaranteed in that environment.
+      // Restricted privacy modes may deny storage. Gameplay remains usable.
     }
   }
 }
 
-/**
- * Validates an authenticated draw before it becomes part of a player session.
- *
- * @param {{drawId?: unknown, dates?: unknown}} verifiedDraw Authenticated draw payload.
- */
+/** @param {{drawId?:unknown,dates?:unknown,playerName?:unknown}} verifiedDraw */
 function validateVerifiedDraw(verifiedDraw) {
-  if (typeof verifiedDraw?.drawId !== "string" || verifiedDraw.drawId.length === 0) {
+  if (typeof verifiedDraw?.drawId !== "string" || !verifiedDraw.drawId) {
     throw new RangeError("Der verifizierte Spielcode enthält keine Ziehungs-ID.");
   }
   if (!Array.isArray(verifiedDraw.dates) || verifiedDraw.dates.length !== DATE_COUNT) {
-    throw new RangeError(`Der verifizierte Spielcode muss genau ${DATE_COUNT} Termine enthalten.`);
+    throw new RangeError(
+      `Der verifizierte Spielcode muss genau ${DATE_COUNT} Termine enthalten.`,
+    );
   }
-  if (!verifiedDraw.dates.every((date) => typeof date === "string" && ISO_DATE_PATTERN.test(date))) {
-    throw new RangeError("Der verifizierte Spielcode enthält ein ungültiges Datumsformat.");
+  if (!verifiedDraw.dates.every(
+    (date) => typeof date === "string" && ISO_DATE_PATTERN.test(date),
+  )) {
+    throw new RangeError(
+      "Der verifizierte Spielcode enthält ein ungültiges Datumsformat.",
+    );
   }
+  normalizeOptionalPlayerName(verifiedDraw.playerName);
 }
 
-/**
- * Validates the optional browser storage abstraction.
- *
- * @param {unknown} storage Candidate storage adapter.
- */
+/** @param {unknown} value @returns {string|null} */
+function normalizeOptionalPlayerName(value) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  if (typeof value !== "string") {
+    throw new TypeError("Der verifizierte Spielername ist ungültig.");
+  }
+  const normalized = value.replace(/\s+/gu, " ").trim();
+  if (
+    !normalized ||
+    normalized !== value ||
+    [...normalized].length > MAX_PLAYER_NAME_LENGTH
+  ) {
+    throw new RangeError("Der verifizierte Spielername ist ungültig.");
+  }
+  return normalized;
+}
+
+/** @param {unknown} storage */
 function validateStorage(storage) {
   if (
     storage !== null &&
@@ -156,12 +175,7 @@ function validateStorage(storage) {
   }
 }
 
-/**
- * Formats an ISO calendar date with the application's fixed Berlin semantics.
- *
- * @param {string} isoDate Calendar date in YYYY-MM-DD form.
- * @returns {string} German display date.
- */
+/** @param {string} isoDate @returns {string} */
 export function formatApplicationDate(isoDate) {
   if (typeof isoDate !== "string" || !ISO_DATE_PATTERN.test(isoDate)) {
     throw new RangeError("Ungültiges ISO-Datum.");
