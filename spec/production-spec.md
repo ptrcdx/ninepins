@@ -65,7 +65,7 @@ Ohne persönlichen Token, bei ungültiger Signatur oder fehlendem öffentlichen 
 9. Erst die explizite Aktion „Nächster Wurf“ startet das Stellwerk und stellt die Kegel neu auf.
 10. Nach dem dritten erfolgreichen Wurf endet die Ziehung. Alle drei Termine bleiben dauerhaft in der Oberfläche sichtbar.
 
-Ein Seiten-Reload startet nur die lokale Darstellung neu. Da es bewusst keinen Serverzustand gibt, kann ein Spieler denselben signierten Link erneut durchspielen; die drei Termine bleiben aber identisch.
+Der bereits erspielte Fortschritt wird pro `drawId` lokal im Browser gespeichert. Ein Seiten-Reload oder erneutes Öffnen desselben persönlichen Links stellt bereits sichtbare Termine wieder her und setzt bei 1/3 oder 2/3 mit dem nächsten Termin fort; bei 3/3 bleibt das Spiel abgeschlossen. Da es bewusst keinen Serverzustand gibt, ist diese Fortschrittspersistenz geräte- und browserlokal.
 
 ## 6. Anforderungen an die 3D-Oberfläche
 
