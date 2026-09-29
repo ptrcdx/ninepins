@@ -8,10 +8,11 @@ Production-oriented static web application for the Pumperella ninepins date draw
 - **Backend:** none.
 - **Database:** none.
 - **Draw payload:** compact, Base64URL-encoded and signed.
-- **Signature verification:** ECDSA P-256 with SHA-256 in the browser via Web Crypto.
+- **Signature verification:** ECDSA P-256 with SHA-256 in the browser via Web Crypto, with a pinned safe fallback.
 - **Admin generator:** local-only tool; the private signing key is never committed or deployed.
-- **Draw rules:** three dates per player, selected uniformly without replacement from an inclusive admin-defined date range. A date may be assigned globally only once within the authoritative archive.
+- **Draw rules:** two dates per player, selected uniformly without replacement from an inclusive admin-defined date range. A date may be assigned globally only once within the authoritative current archive.
 - **Gameplay rule:** only a throw that hits at least one pin reveals the next signed date; gutter and no-hit attempts are repeatable and consume nothing.
+- **Compatibility:** current token version 3 contains two dates. Existing version-1 and version-2 links with three dates remain verifiable and playable.
 
 ## Repository layout
 
@@ -32,7 +33,7 @@ The complete production and acceptance specification is in [`spec/production-spe
 
 The public player application contains only the public verification key. Obfuscation of the payload is not secrecy; it is only intended to prevent casual reading of dates from the URL. Authenticity and tamper detection come from the digital signature.
 
-The date archive is the authority for cross-session uniqueness. If administration moves to another browser/device, import the latest archive before creating another draw.
+The date archive is the authority for cross-session uniqueness. The two-date release uses archive schema/storage version 2. A detected legacy three-date archive does not silently block the new pool; the admin can explicitly migrate it when its old assignments must remain reserved. If administration moves to another browser/device, import the latest authoritative archive before creating another draw.
 
 ## Deployment target
 

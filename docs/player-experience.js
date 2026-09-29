@@ -1,13 +1,15 @@
 const THREE_MODULE_URL = "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
-const SCENE_HOOK_KEY = Symbol.for("pumperella.playerExperience.sceneHook.v2");
-const SCENE_PENDING_KEY = "pumperellaPlayerExperiencePendingV2";
-const SETTER_BRAND_KEY = "pumperellaPinsetterBrandV2";
-const BALL_BRAND_KEY = "pumperellaBallBrandV2";
-const STYLE_ID = "pumperella-player-experience-style-v2";
+const SCENE_HOOK_KEY = Symbol.for("pumperella.playerExperience.sceneHook.v3");
+const SCENE_PENDING_KEY = "pumperellaPlayerExperiencePendingV3";
+const SETTER_BRAND_KEY = "pumperellaPinsetterBrandV3";
+const BALL_BRAND_KEY = "pumperellaBallBrandV3";
+const STYLE_ID = "pumperella-player-experience-style-v3";
 const INLINE_PLAYER_ID = "pumperella-current-player-inline";
 const LEGACY_CARD_ID = "pumperella-current-player";
-const ARCHIVE_STORAGE_KEY = "ninepins.drawArchive.v1";
+const ARCHIVE_STORAGE_KEY = "ninepins.drawArchive.v2";
+const LEGACY_ARCHIVE_STORAGE_KEY = "ninepins.drawArchive.v1";
 const MAX_PLAYER_NAME_LENGTH = 80;
+const INITIAL_CAMERA_ELEVATION_RADIANS = Math.PI / 6;
 
 /**
  * Installs the approved player HUD and 3D branding before the game creates its
@@ -27,16 +29,21 @@ export async function installPlayerExperience(playerSession) {
     window.location.href,
     storage,
   );
-  installPlayerHud(playerName);
+  const dateCount = Array.isArray(playerSession?.dates)
+    ? playerSession.dates.length
+    : 2;
+  installPlayerHud(playerName, dateCount);
+  if (dateCount === 2) {
+    installTwoDateCopyCompatibility();
+  }
 
   const three = await import(THREE_MODULE_URL);
   installSceneHook(three);
 }
 
 /**
- * Resolves the visible player name. A query parameter is preferred for links
- * created by the current admin tool. Older links can still recover the player
- * from the local admin archive by drawId when both pages share an origin.
+ * Resolves the visible player name from the verified session. Legacy version-1
+ * links can still recover the player from a local admin archive by drawId.
  *
  * @param {object|null|undefined} playerSession Player session.
  * @param {string} locationHref Current page URL.
@@ -48,13 +55,8 @@ export function resolvePlayerDisplayName(
   locationHref,
   storage = null,
 ) {
-  const url = new URL(locationHref, "https://example.invalid/");
-  for (const key of ["player", "name", "spieler", "displayName"]) {
-    const value = normalizePlayerName(url.searchParams.get(key));
-    if (value) {
-      return value;
-    }
-  }
+  // Parse the URL defensively, but never trust identity query parameters.
+  new URL(locationHref, "https://example.invalid/");
 
   const candidates = [
     playerSession?.playerName,
@@ -81,7 +83,7 @@ export function resolvePlayerDisplayName(
 }
 
 /**
- * Finds a player in the locally persisted admin archive by drawId.
+ * Finds a player in a locally persisted admin archive by drawId.
  *
  * @param {unknown} drawId Draw identifier.
  * @param {{getItem:(key:string)=>string|null}|null} storage Storage adapter.
@@ -92,31 +94,33 @@ export function findArchivedPlayerName(drawId, storage) {
     return null;
   }
 
-  try {
-    const serialized = storage.getItem(ARCHIVE_STORAGE_KEY);
-    if (!serialized) {
-      return null;
-    }
-
-    const archive = JSON.parse(serialized);
-    if (!Array.isArray(archive?.draws)) {
-      return null;
-    }
-
-    for (const batch of archive.draws) {
-      if (!Array.isArray(batch?.assignments)) {
+  for (const storageKey of [ARCHIVE_STORAGE_KEY, LEGACY_ARCHIVE_STORAGE_KEY]) {
+    try {
+      const serialized = storage.getItem(storageKey);
+      if (!serialized) {
         continue;
       }
-      const assignment = batch.assignments.find(
-        (candidate) => candidate?.drawId === drawId,
-      );
-      const name = normalizePlayerName(assignment?.player);
-      if (name) {
-        return name;
+
+      const archive = JSON.parse(serialized);
+      if (!Array.isArray(archive?.draws)) {
+        continue;
       }
+
+      for (const batch of archive.draws) {
+        if (!Array.isArray(batch?.assignments)) {
+          continue;
+        }
+        const assignment = batch.assignments.find(
+          (candidate) => candidate?.drawId === drawId,
+        );
+        const name = normalizePlayerName(assignment?.player);
+        if (name) {
+          return name;
+        }
+      }
+    } catch {
+      // Continue with the next compatible archive generation.
     }
-  } catch {
-    return null;
   }
 
   return null;
@@ -127,9 +131,11 @@ export function findArchivedPlayerName(drawId, storage) {
  * dialog so the launch ball remains visible and directly touchable.
  *
  * @param {string} playerName Current player name.
+ * @param {number} dateCount Number of signed dates in the verified token.
  */
-function installPlayerHud(playerName) {
+function installPlayerHud(playerName, dateCount) {
   document.getElementById(LEGACY_CARD_ID)?.remove();
+  document.body.classList.toggle("pumperella-two-date-draw", dateCount === 2);
 
   if (!document.getElementById(STYLE_ID)) {
     const style = document.createElement("style");
@@ -164,6 +170,9 @@ function installPlayerHud(playerName) {
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+      .pumperella-two-date-draw #date-row-3 {
+        display: none !important;
+      }
       .hud .bottom {
         padding-bottom: 0 !important;
       }
@@ -190,26 +199,153 @@ function installPlayerHud(playerName) {
         padding: 7px 19px !important;
       }
       @media (max-width: 600px) {
-        .dates .pumperella-player-inline {
-          display: block;
-          padding: 7px 8px;
+        body.pumperella-two-date-draw .hud {
+          padding: max(8px, env(safe-area-inset-top)) 10px max(8px, env(safe-area-inset-bottom)) !important;
         }
-        .dates .pumperella-player-inline small,
-        .dates .pumperella-player-inline strong {
-          display: block;
-          text-align: left;
+        body.pumperella-two-date-draw .top {
+          align-items: flex-start;
+          gap: 8px;
         }
-        .dates .pumperella-player-inline strong {
-          margin-top: 3px;
+        body.pumperella-two-date-draw .left-stack {
+          width: calc(100vw - 134px);
+          max-width: none;
+          gap: 0;
+        }
+        body.pumperella-two-date-draw .brand {
+          display: none;
+        }
+        body.pumperella-two-date-draw .dates {
+          width: 100%;
+          min-width: 0;
+          max-width: none;
+          padding: 8px 9px 9px;
+          border-radius: 15px;
+        }
+        body.pumperella-two-date-draw .dates .card-heading {
+          gap: 6px;
+          margin-bottom: 5px;
+        }
+        body.pumperella-two-date-draw .dates .icon-badge {
+          width: 22px;
+          height: 22px;
+          border-radius: 7px;
+        }
+        body.pumperella-two-date-draw .dates .icon-badge svg {
+          width: 14px;
+          height: 14px;
+        }
+        body.pumperella-two-date-draw .dates .card-heading small {
+          font-size: 9px;
+          letter-spacing: .11em;
+        }
+        body.pumperella-two-date-draw .dates .pumperella-player-inline {
+          display: flex;
+          align-items: baseline;
+          margin: 0 0 6px;
+          padding: 0 0 6px;
+          border: 0;
+          border-bottom: 1px solid rgba(255,255,255,.09);
+          border-radius: 0;
+          background: none;
+        }
+        body.pumperella-two-date-draw .dates .pumperella-player-inline small {
+          font-size: 8px;
+          letter-spacing: .10em;
+        }
+        body.pumperella-two-date-draw .dates .pumperella-player-inline strong {
+          max-width: 66%;
+          margin: 0;
           font-size: 12px;
+          text-align: right;
+        }
+        body.pumperella-two-date-draw .dates ol {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 6px;
+        }
+        body.pumperella-two-date-draw .dates li {
+          display: block;
+          min-width: 0;
+          padding: 6px 7px;
+          border: 1px solid rgba(255,255,255,.08);
+          border-radius: 9px;
+          background: rgba(255,255,255,.035);
+        }
+        body.pumperella-two-date-draw .dates li span {
+          display: none;
+        }
+        body.pumperella-two-date-draw .dates li strong {
+          display: block;
+          overflow: hidden;
+          font-size: 11px;
+          line-height: 1.15;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        body.pumperella-two-date-draw .status {
+          width: 106px;
+          min-width: 106px;
+          max-width: 106px;
+          padding: 8px 9px;
+          border-radius: 15px;
+        }
+        body.pumperella-two-date-draw .status small {
+          font-size: 8px;
+          letter-spacing: .10em;
+        }
+        body.pumperella-two-date-draw .status strong {
+          margin-top: 3px;
+          font-size: 14px;
+          line-height: 1.08;
+        }
+        body.pumperella-two-date-draw .result {
+          top: max(112px, calc(env(safe-area-inset-top) + 102px));
+          min-width: 210px;
+          max-width: calc(100vw - 24px);
+          padding: 9px 12px;
+        }
+        body.pumperella-two-date-draw .result.date {
+          display: none;
         }
         .hud .hint {
-          width: min(620px, calc(100vw - 24px)) !important;
-          padding: 8px 11px 6px !important;
-          transform: translateY(6px);
+          width: min(620px, calc(100vw - 20px)) !important;
+          padding: 7px 10px 5px !important;
+          transform: translateY(5px);
+          border-radius: 16px !important;
         }
-        .hud .hint strong { font-size: 15px !important; }
-        .hud .hint span { font-size: 10.5px !important; }
+        .hud .hint strong {
+          font-size: 14px !important;
+        }
+        .hud .hint span {
+          margin-top: 3px !important;
+          font-size: 10px !important;
+          line-height: 1.22 !important;
+        }
+        .hud .hint .meter {
+          margin-top: 5px !important;
+        }
+        .hud .hint #next {
+          min-height: 34px !important;
+          margin-top: 6px !important;
+          padding: 5px 16px !important;
+          font-size: 13px !important;
+        }
+      }
+      @media (max-width: 380px) {
+        body.pumperella-two-date-draw .left-stack {
+          width: calc(100vw - 126px);
+        }
+        body.pumperella-two-date-draw .status {
+          width: 98px;
+          min-width: 98px;
+          max-width: 98px;
+        }
+        body.pumperella-two-date-draw .dates .pumperella-player-inline strong {
+          max-width: 61%;
+          font-size: 11px;
+        }
+        body.pumperella-two-date-draw .dates li strong {
+          font-size: 10px;
+        }
       }
       @media (max-height: 560px) and (orientation: landscape) {
         .dates .pumperella-player-inline {
@@ -229,6 +365,7 @@ function installPlayerHud(playerName) {
   if (!datesCard) {
     return;
   }
+  datesCard.dataset.dateCount = String(dateCount);
 
   let row = document.getElementById(INLINE_PLAYER_ID);
   if (!row) {
@@ -244,11 +381,67 @@ function installPlayerHud(playerName) {
 }
 
 /**
- * Hooks concrete game scenes and adds the corrected pinsetter and ball marks as
- * soon as their meshes have been assembled.
- *
- * @param {typeof import("three")} three Three.js namespace.
+ * Keeps the legacy inline game controller's hard-coded three-date wording in
+ * sync with current two-date sessions without changing its validated physics.
  */
+function installTwoDateCopyCompatibility() {
+  const replacements = [
+    ["Alle drei Termine sind bereits gezogen. Du kannst beliebig weiterspielen.", "Beide Termine sind bereits gezogen. Du kannst beliebig weiterspielen."],
+    ["Alle drei Termine sind gezogen · weiterspielen", "Beide Termine sind gezogen · weiterspielen"],
+    ["Die drei gezogenen Termine bleiben unverändert.", "Die beiden gezogenen Termine bleiben unverändert."],
+    ["Alle drei Termine sind gezogen", "Beide Termine sind gezogen"],
+  ];
+  const elements = [
+    "status",
+    "hintTitle",
+    "hintText",
+    "resultLabel",
+    "resultValue",
+  ]
+    .map((id) => document.getElementById(id))
+    .filter(Boolean);
+
+  const normalize = (element) => {
+    let next = element.textContent ?? "";
+    next = next.replace(/Termin (\d+) von 3/gu, "Termin $1 von 2");
+    next = next.replace(/(\d+) von 3 gezogen/gu, "$1 von 2 gezogen");
+    for (const [from, to] of replacements) {
+      next = next.replaceAll(from, to);
+    }
+    if (next !== element.textContent) {
+      element.textContent = next;
+    }
+  };
+
+  const observer = new MutationObserver((mutations) => {
+    const changed = new Set();
+    for (const mutation of mutations) {
+      const element = mutation.target.nodeType === Node.TEXT_NODE
+        ? mutation.target.parentElement
+        : mutation.target;
+      if (element instanceof Element) {
+        const tracked = elements.find((candidate) =>
+          candidate === element || candidate.contains(element),
+        );
+        if (tracked) {
+          changed.add(tracked);
+        }
+      }
+    }
+    changed.forEach(normalize);
+  });
+
+  for (const element of elements) {
+    normalize(element);
+    observer.observe(element, {
+      characterData: true,
+      childList: true,
+      subtree: true,
+    });
+  }
+}
+
+/** @param {typeof import("three")} three Three.js namespace. */
 function installSceneHook(three) {
   const prototype = three.Scene.prototype;
   if (prototype[SCENE_HOOK_KEY]) {
@@ -270,12 +463,7 @@ function installSceneHook(three) {
   });
 }
 
-/**
- * Defers inspection until the current scene-building operation completes.
- *
- * @param {import("three").Scene} scene Active scene.
- * @param {typeof import("three")} three Three.js namespace.
- */
+/** @param {import("three").Scene} scene @param {typeof import("three")} three */
 function scheduleSceneBranding(scene, three) {
   if (scene.userData[SCENE_PENDING_KEY]) {
     return;
@@ -299,12 +487,7 @@ function scheduleSceneBranding(scene, three) {
   });
 }
 
-/**
- * Finds the moving pinsetter group from its stable compound geometry.
- *
- * @param {import("three").Scene} scene Active scene.
- * @returns {import("three").Group|null} Pinsetter group.
- */
+/** @param {import("three").Scene} scene @returns {import("three").Group|null} */
 function findPinsetter(scene) {
   let match = null;
   scene.traverse((object) => {
@@ -334,12 +517,7 @@ function findPinsetter(scene) {
   return match;
 }
 
-/**
- * Finds the playable sphere used as the bowling ball.
- *
- * @param {import("three").Scene} scene Active scene.
- * @returns {import("three").Mesh|null} Ball mesh.
- */
+/** @param {import("three").Scene} scene @returns {import("three").Mesh|null} */
 function findPlayableBall(scene) {
   let match = null;
   scene.traverse((object) => {
@@ -351,11 +529,25 @@ function findPlayableBall(scene) {
 }
 
 /**
- * Adds a fitted illuminated sign inside the existing front-face geometry.
+ * Calculates the crown's camera-facing position on the launch ball.
  *
- * @param {import("three").Group} setter Pinsetter group.
- * @param {typeof import("three")} three Three.js namespace.
+ * @param {number} radius Ball radius in world units.
+ * @returns {[number, number, number]} Local sprite position.
  */
+export function resolveBallCrownOffset(radius) {
+  if (!Number.isFinite(radius) || radius <= 0) {
+    throw new RangeError("Ball radius must be a positive finite number.");
+  }
+
+  const surfaceRadius = radius + 0.006;
+  return [
+    0,
+    surfaceRadius * Math.sin(INITIAL_CAMERA_ELEVATION_RADIANS),
+    surfaceRadius * Math.cos(INITIAL_CAMERA_ELEVATION_RADIANS),
+  ];
+}
+
+/** @param {import("three").Group} setter @param {typeof import("three")} three */
 function addPinsetterBrand(setter, three) {
   const material = new three.MeshBasicMaterial({
     map: createPinsetterTexture(three),
@@ -368,7 +560,7 @@ function addPinsetterBrand(setter, three) {
   sign.renderOrder = 8;
   setter.add(sign);
 
-  loadOfficialLogo(three, (image) => {
+  loadOfficialLogo((image) => {
     const previous = material.map;
     material.map = createPinsetterTexture(three, image);
     material.needsUpdate = true;
@@ -376,13 +568,7 @@ function addPinsetterBrand(setter, three) {
   });
 }
 
-/**
- * Replaces the generic crown sprite with the actual crown cropped from the
- * official club logo.
- *
- * @param {import("three").Mesh} ball Ball mesh.
- * @param {typeof import("three")} three Three.js namespace.
- */
+/** @param {import("three").Mesh} ball @param {typeof import("three")} three */
 function addOfficialCrownToBall(ball, three) {
   for (const child of ball.children) {
     if (child.isSprite) {
@@ -397,13 +583,16 @@ function addOfficialCrownToBall(ball, three) {
   });
   const emblem = new three.Sprite(material);
   const radius = ball.geometry?.parameters?.radius ?? 0.33;
+  const crownOffset = resolveBallCrownOffset(radius);
   emblem.name = "PumperellaOfficialBallCrown";
   emblem.scale.set(0.46, 0.31, 1);
-  emblem.position.set(0, 0.018, radius + 0.006);
+  // The launch camera sits about 30 degrees above the ball. Put the crown on
+  // that camera-facing normal so the initial view is frontal, not downward.
+  emblem.position.set(...crownOffset);
   emblem.renderOrder = 9;
   ball.add(emblem);
 
-  loadOfficialLogo(three, (image) => {
+  loadOfficialLogo((image) => {
     const previous = material.map;
     material.map = createBallCrownTexture(three, image);
     material.needsUpdate = true;
@@ -411,27 +600,15 @@ function addOfficialCrownToBall(ball, three) {
   });
 }
 
-/**
- * Loads the official club logo from the shipped asset.
- *
- * @param {typeof import("three")} three Three.js namespace.
- * @param {(image:HTMLImageElement)=>void} onLoad Success callback.
- */
-function loadOfficialLogo(three, onLoad) {
+/** @param {(image:HTMLImageElement)=>void} onLoad */
+function loadOfficialLogo(onLoad) {
   const image = new Image();
   image.decoding = "async";
   image.onload = () => onLoad(image);
   image.src = new URL("./assets/pumperella-logo.png", import.meta.url).href;
 }
 
-/**
- * Creates the horizontal sign texture. The sign contains only the emblem and a
- * large readable wordmark; the tiny tagline is intentionally omitted.
- *
- * @param {typeof import("three")} three Three.js namespace.
- * @param {CanvasImageSource|null} [logoImage=null] Official logo image.
- * @returns {import("three").CanvasTexture} Sign texture.
- */
+/** @param {typeof import("three")} three @param {CanvasImageSource|null} [logoImage=null] */
 function createPinsetterTexture(three, logoImage = null) {
   const canvas = document.createElement("canvas");
   canvas.width = 1024;
@@ -471,13 +648,7 @@ function createPinsetterTexture(three, logoImage = null) {
   return texture;
 }
 
-/**
- * Creates a crown texture by cropping the actual crown from the club logo.
- *
- * @param {typeof import("three")} three Three.js namespace.
- * @param {CanvasImageSource|null} [logoImage=null] Official logo image.
- * @returns {import("three").CanvasTexture} Crown texture.
- */
+/** @param {typeof import("three")} three @param {CanvasImageSource|null} [logoImage=null] */
 function createBallCrownTexture(three, logoImage = null) {
   const canvas = document.createElement("canvas");
   canvas.width = 320;
@@ -514,15 +685,12 @@ function createBallCrownTexture(three, logoImage = null) {
 }
 
 /**
- * Draws only the graphic part of the official logo and excludes its small
- * embedded wordmark.
- *
- * @param {CanvasRenderingContext2D} context Canvas context.
- * @param {CanvasImageSource} image Official logo image.
- * @param {number} x Destination X.
- * @param {number} y Destination Y.
- * @param {number} width Destination width.
- * @param {number} height Destination height.
+ * @param {CanvasRenderingContext2D} context
+ * @param {CanvasImageSource} image
+ * @param {number} x
+ * @param {number} y
+ * @param {number} width
+ * @param {number} height
  */
 function drawOfficialEmblem(context, image, x, y, width, height) {
   const sourceX = image.width * 0.12;
@@ -546,12 +714,10 @@ function drawOfficialEmblem(context, image, x, y, width, height) {
 }
 
 /**
- * Draws a crown matching the official mark until its asset is available.
- *
- * @param {CanvasRenderingContext2D} context Canvas context.
- * @param {number} centerX Crown center X.
- * @param {number} centerY Crown center Y.
- * @param {number} scale Crown scale.
+ * @param {CanvasRenderingContext2D} context
+ * @param {number} centerX
+ * @param {number} centerY
+ * @param {number} scale
  */
 function drawFallbackCrown(context, centerX, centerY, scale) {
   const points = [
@@ -593,11 +759,7 @@ function drawFallbackCrown(context, centerX, centerY, scale) {
   context.shadowBlur = 0;
 }
 
-/**
- * Returns the first accessible browser storage implementation.
- *
- * @returns {Storage|null} Browser storage or null.
- */
+/** @returns {Storage|null} Browser storage or null. */
 function resolveBrowserStorage() {
   for (const key of ["localStorage", "sessionStorage"]) {
     try {
@@ -612,12 +774,7 @@ function resolveBrowserStorage() {
   return null;
 }
 
-/**
- * Normalizes a player name for display.
- *
- * @param {unknown} value Candidate value.
- * @returns {string|null} Normalized name or null.
- */
+/** @param {unknown} value @returns {string|null} */
 function normalizePlayerName(value) {
   if (typeof value !== "string") {
     return null;
@@ -626,14 +783,7 @@ function normalizePlayerName(value) {
   return normalized ? normalized.slice(0, MAX_PLAYER_NAME_LENGTH) : null;
 }
 
-/**
- * Checks numeric geometry values with tolerance.
- *
- * @param {number} value Candidate value.
- * @param {number} target Target value.
- * @param {number} tolerance Allowed difference.
- * @returns {boolean} Whether values are close.
- */
+/** @param {number} value @param {number} target @param {number} tolerance */
 function approximately(value, target, tolerance) {
   return Number.isFinite(value) && Math.abs(value - target) <= tolerance;
 }

@@ -1,10 +1,10 @@
 const LEGACY_TOKEN_VERSION = 1;
-const TOKEN_VERSION = 2;
+const THREE_DATE_TOKEN_VERSION = 2;
+const TOKEN_VERSION = 3;
 const UUID_BYTE_LENGTH = 16;
-const DATE_COUNT = 3;
+const CURRENT_DATE_COUNT = 2;
+const LEGACY_DATE_COUNT = 3;
 const DATE_BYTE_LENGTH = 4;
-const BASE_PAYLOAD_BYTE_LENGTH =
-  1 + UUID_BYTE_LENGTH + DATE_COUNT * DATE_BYTE_LENGTH;
 const PLAYER_NAME_LENGTH_BYTE_LENGTH = 1;
 const MILLISECONDS_PER_DAY = 86_400_000;
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/u;
@@ -116,7 +116,7 @@ export async function verifyDrawToken(token, verificationKey, options = {}) {
 }
 
 /**
- * Decodes version-1 and version-2 payloads after signature validation.
+ * Decodes version-1, version-2 and version-3 payloads after signature validation.
  *
  * @param {Uint8Array} payload Authenticated payload.
  * @returns {{drawId:string,dates:string[],playerName:string|null}}
@@ -125,37 +125,46 @@ export function decodeVerifiedDrawPayload(payload) {
   return decodePayload(payload);
 }
 
-/**
- * @param {Uint8Array} payload Authenticated payload.
- * @returns {{drawId:string,dates:string[],playerName:string|null}}
- */
+/** @param {Uint8Array} payload */
 function decodePayload(payload) {
-  if (
-    !(payload instanceof Uint8Array) ||
-    payload.byteLength < BASE_PAYLOAD_BYTE_LENGTH
-  ) {
+  if (!(payload instanceof Uint8Array) || payload.byteLength < 1) {
     throw new RangeError("Der Spielcode ist zu kurz.");
   }
 
   const version = payload[0];
   if (version === LEGACY_TOKEN_VERSION) {
-    if (payload.byteLength !== BASE_PAYLOAD_BYTE_LENGTH) {
+    const legacyBaseLength = getBasePayloadByteLength(LEGACY_DATE_COUNT);
+    if (payload.byteLength !== legacyBaseLength) {
       throw new RangeError(
         "Der ältere Spielcode hat eine ungültige Länge.",
       );
     }
-    return decodeBasePayload(payload, null);
+    return decodeBasePayload(payload, null, LEGACY_DATE_COUNT);
   }
 
-  if (version !== TOKEN_VERSION) {
-    throw new RangeError(
-      `Nicht unterstützte Spielcode-Version: ${version}.`,
-    );
+  if (version === THREE_DATE_TOKEN_VERSION) {
+    return decodeNamedPayload(payload, LEGACY_DATE_COUNT);
   }
 
-  const playerNameLength = payload[BASE_PAYLOAD_BYTE_LENGTH];
+  if (version === TOKEN_VERSION) {
+    return decodeNamedPayload(payload, CURRENT_DATE_COUNT);
+  }
+
+  throw new RangeError(
+    `Nicht unterstützte Spielcode-Version: ${version}.`,
+  );
+}
+
+/** @param {Uint8Array} payload @param {number} dateCount */
+function decodeNamedPayload(payload, dateCount) {
+  const basePayloadByteLength = getBasePayloadByteLength(dateCount);
+  if (payload.byteLength < basePayloadByteLength + PLAYER_NAME_LENGTH_BYTE_LENGTH) {
+    throw new RangeError("Der Spielcode ist zu kurz.");
+  }
+
+  const playerNameLength = payload[basePayloadByteLength];
   const expectedLength =
-    BASE_PAYLOAD_BYTE_LENGTH +
+    basePayloadByteLength +
     PLAYER_NAME_LENGTH_BYTE_LENGTH +
     playerNameLength;
   if (playerNameLength === 0 || payload.byteLength !== expectedLength) {
@@ -168,7 +177,7 @@ function decodePayload(payload) {
   try {
     playerName = TEXT_DECODER.decode(
       payload.slice(
-        BASE_PAYLOAD_BYTE_LENGTH + PLAYER_NAME_LENGTH_BYTE_LENGTH,
+        basePayloadByteLength + PLAYER_NAME_LENGTH_BYTE_LENGTH,
       ),
     );
   } catch (error) {
@@ -185,22 +194,18 @@ function decodePayload(payload) {
     );
   }
 
-  return decodeBasePayload(payload, playerName);
+  return decodeBasePayload(payload, playerName, dateCount);
 }
 
-/**
- * @param {Uint8Array} payload Authenticated payload.
- * @param {string|null} playerName Authenticated name or legacy null.
- * @returns {{drawId:string,dates:string[],playerName:string|null}}
- */
-function decodeBasePayload(payload, playerName) {
+/** @param {Uint8Array} payload @param {string|null} playerName @param {number} dateCount */
+function decodeBasePayload(payload, playerName, dateCount) {
   const view = new DataView(
     payload.buffer,
     payload.byteOffset,
     payload.byteLength,
   );
   const uuidBytes = payload.slice(1, 1 + UUID_BYTE_LENGTH);
-  const dates = Array.from({ length: DATE_COUNT }, (_, index) => {
+  const dates = Array.from({ length: dateCount }, (_, index) => {
     const dayNumber = view.getUint32(
       1 + UUID_BYTE_LENGTH + index * DATE_BYTE_LENGTH,
       false,
@@ -211,6 +216,11 @@ function decodeBasePayload(payload, playerName) {
   });
 
   return { drawId: bytesToUuid(uuidBytes), dates, playerName };
+}
+
+/** @param {number} dateCount */
+function getBasePayloadByteLength(dateCount) {
+  return 1 + UUID_BYTE_LENGTH + dateCount * DATE_BYTE_LENGTH;
 }
 
 /** @param {object} options @returns {SubtleCrypto|null} */

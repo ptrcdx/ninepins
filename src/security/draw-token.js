@@ -1,11 +1,12 @@
 import { formatIsoDate, parseIsoDate } from "../domain/date-draw.js";
 
 const LEGACY_TOKEN_VERSION = 1;
-const TOKEN_VERSION = 2;
+const THREE_DATE_TOKEN_VERSION = 2;
+const TOKEN_VERSION = 3;
 const UUID_BYTE_LENGTH = 16;
-const DATE_COUNT = 3;
+const CURRENT_DATE_COUNT = 2;
+const LEGACY_DATE_COUNT = 3;
 const DATE_BYTE_LENGTH = 4;
-const BASE_PAYLOAD_BYTE_LENGTH = 1 + UUID_BYTE_LENGTH + DATE_COUNT * DATE_BYTE_LENGTH;
 const PLAYER_NAME_LENGTH_BYTE_LENGTH = 1;
 const MAX_PLAYER_NAME_BYTES = 255;
 const MAX_PLAYER_NAME_CHARACTERS = 80;
@@ -71,12 +72,14 @@ export async function importPrivateKeyJwk(jwk) {
 /**
  * Serializes one signed player assignment.
  *
- * Version 2 layout:
+ * Version 3 layout:
  * - 1 byte protocol version
  * - 16 bytes draw UUID
- * - 3 x 4-byte unsigned UTC day numbers
+ * - 2 x 4-byte unsigned UTC day numbers
  * - 1 byte UTF-8 player-name byte length
  * - player-name bytes
+ *
+ * Versions 1 and 2 used three dates and remain decodable for compatibility.
  *
  * @param {{drawId:string,dates:string[],playerName?:string}} draw Draw data.
  * @returns {Uint8Array} Serialized payload.
@@ -88,7 +91,7 @@ export function encodeDrawPayload(draw) {
 
   const { drawId, dates } = draw;
   const uuidBytes = uuidToBytes(drawId);
-  validateDates(dates);
+  validateDates(dates, CURRENT_DATE_COUNT);
   const normalizedPlayerName = resolvePlayerName(draw);
   const playerNameBytes = TEXT_ENCODER.encode(normalizedPlayerName);
 
@@ -98,8 +101,9 @@ export function encodeDrawPayload(draw) {
     );
   }
 
+  const basePayloadByteLength = getBasePayloadByteLength(CURRENT_DATE_COUNT);
   const payload = new Uint8Array(
-    BASE_PAYLOAD_BYTE_LENGTH +
+    basePayloadByteLength +
       PLAYER_NAME_LENGTH_BYTE_LENGTH +
       playerNameBytes.byteLength,
   );
@@ -116,74 +120,45 @@ export function encodeDrawPayload(draw) {
     );
   });
 
-  payload[BASE_PAYLOAD_BYTE_LENGTH] = playerNameBytes.byteLength;
+  payload[basePayloadByteLength] = playerNameBytes.byteLength;
   payload.set(
     playerNameBytes,
-    BASE_PAYLOAD_BYTE_LENGTH + PLAYER_NAME_LENGTH_BYTE_LENGTH,
+    basePayloadByteLength + PLAYER_NAME_LENGTH_BYTE_LENGTH,
   );
   return payload;
 }
 
 /**
- * Decodes current version-2 payloads and legacy version-1 links.
+ * Decodes current version-3 payloads and legacy version-1/version-2 links.
  *
  * @param {Uint8Array} payload Serialized payload.
  * @returns {{drawId:string,dates:string[],playerName:string|null}} Decoded draw.
  */
 export function decodeDrawPayload(payload) {
-  if (
-    !(payload instanceof Uint8Array) ||
-    payload.byteLength < BASE_PAYLOAD_BYTE_LENGTH
-  ) {
+  if (!(payload instanceof Uint8Array) || payload.byteLength < 1) {
     throw new RangeError("Draw payload is too short.");
   }
 
   const version = payload[0];
   if (version === LEGACY_TOKEN_VERSION) {
-    if (payload.byteLength !== BASE_PAYLOAD_BYTE_LENGTH) {
+    const legacyBaseLength = getBasePayloadByteLength(LEGACY_DATE_COUNT);
+    if (payload.byteLength !== legacyBaseLength) {
       throw new RangeError(
-        `Legacy draw payload must contain exactly ${BASE_PAYLOAD_BYTE_LENGTH} bytes.`,
+        `Legacy draw payload must contain exactly ${legacyBaseLength} bytes.`,
       );
     }
-    return decodeBasePayload(payload, null);
+    return decodeBasePayload(payload, null, LEGACY_DATE_COUNT);
   }
 
-  if (version !== TOKEN_VERSION) {
-    throw new RangeError(`Unsupported draw token version: ${version}.`);
+  if (version === THREE_DATE_TOKEN_VERSION) {
+    return decodeNamedPayload(payload, LEGACY_DATE_COUNT);
   }
 
-  const playerNameLength = payload[BASE_PAYLOAD_BYTE_LENGTH];
-  if (playerNameLength === 0) {
-    throw new RangeError("Draw payload must contain a player name.");
+  if (version === TOKEN_VERSION) {
+    return decodeNamedPayload(payload, CURRENT_DATE_COUNT);
   }
 
-  const expectedLength =
-    BASE_PAYLOAD_BYTE_LENGTH +
-    PLAYER_NAME_LENGTH_BYTE_LENGTH +
-    playerNameLength;
-  if (payload.byteLength !== expectedLength) {
-    throw new RangeError(
-      "Draw payload length does not match its player-name length.",
-    );
-  }
-
-  let decodedPlayerName;
-  try {
-    decodedPlayerName = TEXT_DECODER.decode(
-      payload.slice(BASE_PAYLOAD_BYTE_LENGTH + PLAYER_NAME_LENGTH_BYTE_LENGTH),
-    );
-  } catch (error) {
-    throw new RangeError(
-      "Draw payload contains an invalid UTF-8 player name.",
-      { cause: error },
-    );
-  }
-
-  const playerName = normalizePlayerName(decodedPlayerName);
-  if (playerName !== decodedPlayerName) {
-    throw new RangeError("Draw payload contains a non-canonical player name.");
-  }
-  return decodeBasePayload(payload, playerName);
+  throw new RangeError(`Unsupported draw token version: ${version}.`);
 }
 
 /**
@@ -274,6 +249,7 @@ export function base64UrlToBytes(value) {
   }
 }
 
+/** @param {{drawId:string,dates:string[],playerName?:string}} draw */
 function resolvePlayerName(draw) {
   if (typeof draw.playerName === "string") {
     return normalizePlayerName(draw.playerName);
@@ -290,14 +266,56 @@ function resolvePlayerName(draw) {
   return normalizePlayerName(draw.playerName);
 }
 
-function decodeBasePayload(payload, playerName) {
+/** @param {Uint8Array} payload @param {number} dateCount */
+function decodeNamedPayload(payload, dateCount) {
+  const basePayloadByteLength = getBasePayloadByteLength(dateCount);
+  if (payload.byteLength < basePayloadByteLength + PLAYER_NAME_LENGTH_BYTE_LENGTH) {
+    throw new RangeError("Draw payload is too short.");
+  }
+
+  const playerNameLength = payload[basePayloadByteLength];
+  if (playerNameLength === 0) {
+    throw new RangeError("Draw payload must contain a player name.");
+  }
+
+  const expectedLength =
+    basePayloadByteLength +
+    PLAYER_NAME_LENGTH_BYTE_LENGTH +
+    playerNameLength;
+  if (payload.byteLength !== expectedLength) {
+    throw new RangeError(
+      "Draw payload length does not match its player-name length.",
+    );
+  }
+
+  let decodedPlayerName;
+  try {
+    decodedPlayerName = TEXT_DECODER.decode(
+      payload.slice(basePayloadByteLength + PLAYER_NAME_LENGTH_BYTE_LENGTH),
+    );
+  } catch (error) {
+    throw new RangeError(
+      "Draw payload contains an invalid UTF-8 player name.",
+      { cause: error },
+    );
+  }
+
+  const playerName = normalizePlayerName(decodedPlayerName);
+  if (playerName !== decodedPlayerName) {
+    throw new RangeError("Draw payload contains a non-canonical player name.");
+  }
+  return decodeBasePayload(payload, playerName, dateCount);
+}
+
+/** @param {Uint8Array} payload @param {string|null} playerName @param {number} dateCount */
+function decodeBasePayload(payload, playerName, dateCount) {
   const uuidBytes = payload.slice(1, 1 + UUID_BYTE_LENGTH);
   const view = new DataView(
     payload.buffer,
     payload.byteOffset,
     payload.byteLength,
   );
-  const dates = Array.from({ length: DATE_COUNT }, (_, index) => {
+  const dates = Array.from({ length: dateCount }, (_, index) => {
     const dayNumber = view.getUint32(
       1 + UUID_BYTE_LENGTH + index * DATE_BYTE_LENGTH,
       false,
@@ -307,6 +325,12 @@ function decodeBasePayload(payload, playerName) {
   return { drawId: bytesToUuid(uuidBytes), dates, playerName };
 }
 
+/** @param {number} dateCount */
+function getBasePayloadByteLength(dateCount) {
+  return 1 + UUID_BYTE_LENGTH + dateCount * DATE_BYTE_LENGTH;
+}
+
+/** @param {string} token */
 function splitToken(token) {
   if (typeof token !== "string") {
     throw new TypeError("Draw token must be a string.");
@@ -321,13 +345,15 @@ function splitToken(token) {
   };
 }
 
-function validateDates(dates) {
-  if (!Array.isArray(dates) || dates.length !== DATE_COUNT) {
-    throw new RangeError(`A draw must contain exactly ${DATE_COUNT} dates.`);
+/** @param {unknown} dates @param {number} expectedCount */
+function validateDates(dates, expectedCount) {
+  if (!Array.isArray(dates) || dates.length !== expectedCount) {
+    throw new RangeError(`A draw must contain exactly ${expectedCount} dates.`);
   }
   dates.forEach((date) => parseIsoDate(date));
 }
 
+/** @param {string} uuid */
 function uuidToBytes(uuid) {
   if (typeof uuid !== "string" || !UUID_PATTERN.test(uuid)) {
     throw new RangeError("drawId must be a canonical RFC 4122 UUID.");
@@ -338,6 +364,7 @@ function uuidToBytes(uuid) {
   );
 }
 
+/** @param {Uint8Array} bytes */
 function bytesToUuid(bytes) {
   const hex = Array.from(bytes, (byte) =>
     byte.toString(16).padStart(2, "0"),

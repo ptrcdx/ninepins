@@ -2,21 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import {
   APPLICATION_TIME_ZONE,
+  DEFAULT_DATES_PER_PLAYER,
   createInclusiveDatePool,
   drawDatesWithoutReplacement,
   formatApplicationDate,
   parseIsoDate,
 } from "../src/domain/date-draw.js";
 
-/**
- * Creates a deterministic random-index provider for tests.
- *
- * @param {number[]} sequence Sequence of index values to return.
- * @returns {(maxExclusive: number) => number} Deterministic provider.
- */
 function createSequenceRandomIndex(sequence) {
   let cursor = 0;
-
   return (maxExclusive) => {
     const value = sequence[cursor % sequence.length];
     cursor += 1;
@@ -80,33 +74,33 @@ describe("createInclusiveDatePool", () => {
 });
 
 describe("drawDatesWithoutReplacement", () => {
-  it("assigns exactly three globally unique dates per player by default", () => {
+  it("assigns exactly two globally unique dates per player by default", () => {
+    expect(DEFAULT_DATES_PER_PLAYER).toBe(2);
     const assignments = drawDatesWithoutReplacement({
       players: ["Alice", "Bob"],
       startDate: "2026-10-01",
       endDate: "2026-10-10",
-      randomIndex: createSequenceRandomIndex([0, 2, 4, 1, 3, 0]),
+      randomIndex: createSequenceRandomIndex([0, 2, 4, 1]),
     });
 
     expect(assignments).toHaveLength(2);
-    expect(assignments.every(({ dates }) => dates.length === 3)).toBe(true);
-
+    expect(assignments.every(({ dates }) => dates.length === 2)).toBe(true);
     const allDates = assignments.flatMap(({ dates }) => dates);
     expect(new Set(allDates).size).toBe(allDates.length);
   });
 
-  it("keeps every assigned date inside the configured range", () => {
+  it("draws eight unique dates for four players from 1 through 24 December", () => {
     const assignments = drawDatesWithoutReplacement({
-      players: ["Alice", "Bob", "Carol"],
-      startDate: "2027-01-01",
-      endDate: "2027-01-15",
-      randomIndex: createSequenceRandomIndex([1, 5, 2, 7]),
+      players: ["Anna", "Ben", "Carla", "David"],
+      startDate: "2026-12-01",
+      endDate: "2026-12-24",
+      randomIndex: createSequenceRandomIndex([0, 5, 2, 9, 4, 11, 1, 7]),
     });
 
-    const validPool = new Set(createInclusiveDatePool("2027-01-01", "2027-01-15"));
-    expect(
-      assignments.flatMap(({ dates }) => dates).every((date) => validPool.has(date)),
-    ).toBe(true);
+    const allDates = assignments.flatMap(({ dates }) => dates);
+    expect(allDates).toHaveLength(8);
+    expect(new Set(allDates).size).toBe(8);
+    expect(allDates.every((date) => date >= "2026-12-01" && date <= "2026-12-24")).toBe(true);
   });
 
   it("never reuses dates assigned in previous draw sessions", () => {
@@ -118,14 +112,11 @@ describe("drawDatesWithoutReplacement", () => {
       randomIndex: () => 0,
     });
 
-    const allDates = assignments.flatMap(({ dates }) => dates);
-    expect(allDates).toEqual([
+    expect(assignments.flatMap(({ dates }) => dates)).toEqual([
       "2026-10-04",
       "2026-10-05",
       "2026-10-06",
       "2026-10-07",
-      "2026-10-08",
-      "2026-10-09",
     ]);
   });
 
@@ -134,11 +125,11 @@ describe("drawDatesWithoutReplacement", () => {
       drawDatesWithoutReplacement({
         players: ["Alice", "Bob"],
         startDate: "2026-10-01",
-        endDate: "2026-10-08",
+        endDate: "2026-10-06",
         excludedDates: ["2026-10-01", "2026-10-02", "2026-10-03"],
         randomIndex: () => 0,
       }),
-    ).toThrow("Date range contains 5 unused days after exclusions but 6 unique dates are required.");
+    ).toThrow("Date range contains 3 unused days after exclusions but 4 unique dates are required.");
   });
 
   it("fails before drawing if the range cannot supply enough unique dates", () => {
@@ -146,16 +137,16 @@ describe("drawDatesWithoutReplacement", () => {
       drawDatesWithoutReplacement({
         players: ["Alice", "Bob"],
         startDate: "2026-10-01",
-        endDate: "2026-10-05",
+        endDate: "2026-10-03",
         randomIndex: () => 0,
       }),
-    ).toThrow("Date range contains 5 days but 6 unique dates are required.");
+    ).toThrow("Date range contains 3 days but 4 unique dates are required.");
   });
 
-  it("rejects duplicate player identifiers", () => {
+  it("rejects duplicate player identifiers after normalization", () => {
     expect(() =>
       drawDatesWithoutReplacement({
-        players: ["Alice", "Alice"],
+        players: ["Alice", " Alice "],
         startDate: "2026-10-01",
         endDate: "2026-10-10",
         randomIndex: () => 0,

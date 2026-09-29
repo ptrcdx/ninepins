@@ -58,6 +58,11 @@ h2 {
   color: #5d5a54;
 }
 
+.compact {
+  margin: -8px 0 20px;
+  line-height: 1.5;
+}
+
 .card {
   margin-top: 18px;
   padding: 24px;
@@ -126,6 +131,11 @@ button.secondary,
   color: #171717;
 }
 
+button.danger {
+  border-color: #a53030;
+  color: #8c2020;
+}
+
 button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
@@ -140,6 +150,7 @@ button:disabled {
 .status {
   min-height: 1.4em;
   margin: 14px 0 0;
+  line-height: 1.45;
 }
 
 .status.error {
@@ -148,6 +159,10 @@ button:disabled {
 
 .status.success {
   color: #246b37;
+}
+
+.status.warning {
+  color: #8a5a00;
 }
 
 .table-wrap {

@@ -7,7 +7,7 @@ import {
 
 const VERIFIED_DRAW = Object.freeze({
   drawId: "a4499ca4-0c37-4ddd-b1c9-1a414853465f",
-  dates: Object.freeze(["2026-10-25", "2027-01-08", "2027-06-19"]),
+  dates: Object.freeze(["2026-10-25", "2027-01-08"]),
   playerName: "Claudia Beispiel",
 });
 
@@ -26,7 +26,6 @@ function createMemoryStorage() {
 describe("PlayerDrawSession", () => {
   it("retains the authenticated player name", () => {
     const session = new PlayerDrawSession(VERIFIED_DRAW);
-
     expect(session.getPlayerName()).toBe("Claudia Beispiel");
     expect(session.playerName).toBe("Claudia Beispiel");
   });
@@ -34,37 +33,44 @@ describe("PlayerDrawSession", () => {
   it("supports legacy verified draws without a player name", () => {
     const session = new PlayerDrawSession({
       drawId: VERIFIED_DRAW.drawId,
-      dates: [...VERIFIED_DRAW.dates],
+      dates: ["2026-10-25", "2027-01-08", "2027-06-19"],
       playerName: null,
     });
-
     expect(session.getPlayerName()).toBeNull();
+    expect(session.dates).toHaveLength(3);
   });
 
-  it("reveals exactly three authenticated dates in token order", async () => {
+  it("reveals exactly two authenticated dates in token order", async () => {
     const session = new PlayerDrawSession(VERIFIED_DRAW);
-
     await expect(session.drawDate()).resolves.toBe("25.10.2026");
     await expect(session.drawDate()).resolves.toBe("08.01.2027");
-    await expect(session.drawDate()).resolves.toBe("19.06.2027");
     expect(session.hasRemainingDates()).toBe(false);
-    expect(session.getRevealedCount()).toBe(3);
+    expect(session.getRevealedCount()).toBe(2);
   });
 
-  it("does not expose a fourth date after completion", async () => {
+  it("does not expose a third date after completion", async () => {
     const session = new PlayerDrawSession(VERIFIED_DRAW);
     await session.drawDate();
     await session.drawDate();
-    await session.drawDate();
-
     await expect(session.drawDate()).rejects.toThrow(
-      "Alle drei Termine sind bereits gezogen.",
+      "Alle Termine sind bereits gezogen.",
     );
     expect(session.getRevealedDates()).toEqual([
       "25.10.2026",
       "08.01.2027",
-      "19.06.2027",
     ]);
+  });
+
+  it("continues to reveal all dates from a historic three-date link", async () => {
+    const session = new PlayerDrawSession({
+      drawId: VERIFIED_DRAW.drawId,
+      dates: ["2026-10-25", "2027-01-08", "2027-06-19"],
+      playerName: "Legacy Person",
+    });
+    await expect(session.drawDate()).resolves.toBe("25.10.2026");
+    await expect(session.drawDate()).resolves.toBe("08.01.2027");
+    await expect(session.drawDate()).resolves.toBe("19.06.2027");
+    expect(session.hasRemainingDates()).toBe(false);
   });
 
   it("keeps authenticated assignment data immutable from caller changes", async () => {
@@ -85,16 +91,11 @@ describe("PlayerDrawSession", () => {
     const storage = createMemoryStorage();
     const firstSession = new PlayerDrawSession(VERIFIED_DRAW, storage);
     await firstSession.drawDate();
-    await firstSession.drawDate();
 
     const reloadedSession = new PlayerDrawSession(VERIFIED_DRAW, storage);
-
-    expect(reloadedSession.getRevealedCount()).toBe(2);
-    expect(reloadedSession.getRevealedDates()).toEqual([
-      "25.10.2026",
-      "08.01.2027",
-    ]);
-    await expect(reloadedSession.drawDate()).resolves.toBe("19.06.2027");
+    expect(reloadedSession.getRevealedCount()).toBe(1);
+    expect(reloadedSession.getRevealedDates()).toEqual(["25.10.2026"]);
+    await expect(reloadedSession.drawDate()).resolves.toBe("08.01.2027");
   });
 
   it("does not share progress between different draw ids", async () => {
@@ -110,7 +111,6 @@ describe("PlayerDrawSession", () => {
       },
       storage,
     );
-
     expect(otherSession.getRevealedCount()).toBe(0);
   });
 });

@@ -31,10 +31,11 @@
 
     <section class="card">
       <h2>2. Ziehung konfigurieren</h2>
+      <p class="muted compact">Pro Person werden genau zwei eindeutige Termine aus dem inklusiven Zeitraum gezogen.</p>
       <form id="draw-form">
         <label>
           Spieler, eine Person pro Zeile
-          <textarea id="players" rows="8" required placeholder="Anna\nBen\nCarla"></textarea>
+          <textarea id="players" rows="8" required placeholder="Anna&#10;Ben&#10;Carla"></textarea>
         </label>
 
         <div class="grid-two">
@@ -53,13 +54,14 @@
           <input id="player-app-url" type="url" required placeholder="https://ptrcdx.github.io/ninepins/">
         </label>
 
-        <button id="draw-button" type="submit">Ziehung erzeugen</button>
+        <button id="draw-button" type="submit">Zwei Termine pro Person ziehen</button>
       </form>
       <p id="draw-status" class="status" aria-live="polite"></p>
     </section>
 
     <section class="card">
       <h2>3. Archiv</h2>
+      <p class="muted compact">Das neue Zwei-Termine-Archiv besitzt einen eigenen lokalen Speicher. Ein vorhandenes altes Drei-Termine-Archiv kann bewusst übernommen werden.</p>
       <div class="button-row">
         <label class="button secondary">
           Archiv importieren
@@ -67,8 +69,10 @@
         </label>
         <button id="export-archive" class="secondary" type="button">Archiv exportieren</button>
         <button id="export-csv" class="secondary" type="button">CSV exportieren</button>
+        <button id="migrate-legacy-archive" class="secondary" type="button" disabled>Altes 3-Termine-Archiv übernehmen</button>
+        <button id="reset-archive" class="secondary danger" type="button" disabled>Aktuelles Archiv zurücksetzen</button>
       </div>
-      <p id="archive-status" class="status" aria-live="polite">Noch keine Ziehungen im lokalen Archiv.</p>
+      <p id="archive-status" class="status" aria-live="polite">Noch keine Ziehungen im aktuellen 2-Termine-Archiv.</p>
     </section>
 
     <section class="card" id="results-card" hidden>
@@ -88,7 +92,6 @@
     </section>
   </main>
 
-  <script type="module" src="./player-link-names.js"></script>
   <script type="module" src="./app.js"></script>
 </body>
 </html>

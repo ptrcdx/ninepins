@@ -8,15 +8,13 @@
 
 export const APPLICATION_TIME_ZONE = "Europe/Berlin";
 export const APPLICATION_LOCALE = "de-DE";
+export const DEFAULT_DATES_PER_PLAYER = 2;
 
 const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const MILLISECONDS_PER_DAY = 86_400_000;
 
 /**
  * Parses an ISO calendar date and returns its canonical UTC epoch value.
- *
- * The returned timestamp is an implementation detail. Semantically, the input
- * remains a date-only value in {@link APPLICATION_TIME_ZONE}.
  *
  * @param {string} isoDate Date in YYYY-MM-DD format.
  * @returns {number} Canonical UTC epoch milliseconds at 00:00:00 UTC.
@@ -131,15 +129,12 @@ export function secureRandomIndex(maxExclusive) {
 /**
  * Draws globally unique dates for all players without replacement.
  *
- * Previously assigned dates can be supplied through excludedDates. This lets
- * the local admin archive enforce uniqueness across multiple draw sessions.
- *
  * @param {object} options Draw configuration.
  * @param {string[]} options.players Unique player identifiers or display names.
  * @param {string} options.startDate Inclusive start date in YYYY-MM-DD format.
  * @param {string} options.endDate Inclusive end date in YYYY-MM-DD format.
  * @param {string[]} [options.excludedDates=[]] Dates already assigned in earlier draws.
- * @param {number} [options.datesPerPlayer=3] Number of dates assigned per player.
+ * @param {number} [options.datesPerPlayer=DEFAULT_DATES_PER_PLAYER] Number of dates assigned per player.
  * @param {(maxExclusive: number) => number} [options.randomIndex=secureRandomIndex]
  * Random index provider. Injectable for deterministic tests.
  * @returns {{player: string, dates: string[]}[]} Draw assignments.
@@ -149,10 +144,10 @@ export function drawDatesWithoutReplacement({
   startDate,
   endDate,
   excludedDates = [],
-  datesPerPlayer = 3,
+  datesPerPlayer = DEFAULT_DATES_PER_PLAYER,
   randomIndex = secureRandomIndex,
 }) {
-  validatePlayers(players);
+  const normalizedPlayers = validatePlayers(players);
   validateDatesPerPlayer(datesPerPlayer);
   const excludedDateSet = validateExcludedDates(excludedDates);
 
@@ -162,7 +157,7 @@ export function drawDatesWithoutReplacement({
 
   const fullPool = createInclusiveDatePool(startDate, endDate);
   const pool = fullPool.filter((date) => !excludedDateSet.has(date));
-  const requiredDateCount = players.length * datesPerPlayer;
+  const requiredDateCount = normalizedPlayers.length * datesPerPlayer;
 
   if (pool.length < requiredDateCount) {
     if (excludedDateSet.size === 0) {
@@ -178,7 +173,7 @@ export function drawDatesWithoutReplacement({
 
   const assignments = [];
 
-  for (const player of players) {
+  for (const player of normalizedPlayers) {
     const dates = [];
 
     for (let index = 0; index < datesPerPlayer; index += 1) {
@@ -195,10 +190,10 @@ export function drawDatesWithoutReplacement({
 }
 
 /**
- * Validates the player collection.
+ * Validates and normalizes the player collection.
  *
  * @param {unknown} players Candidate player list.
- * @returns {void}
+ * @returns {string[]} Normalized players.
  */
 function validatePlayers(players) {
   if (!Array.isArray(players) || players.length === 0) {
@@ -209,12 +204,14 @@ function validatePlayers(players) {
     if (typeof player !== "string" || player.trim().length === 0) {
       throw new TypeError("Every player must be a non-empty string.");
     }
-    return player.trim();
+    return player.replace(/\s+/gu, " ").trim();
   });
 
   if (new Set(normalized).size !== normalized.length) {
     throw new RangeError("Player identifiers must be unique.");
   }
+
+  return normalized;
 }
 
 /**
@@ -235,12 +232,7 @@ function validateExcludedDates(excludedDates) {
   return new Set(excludedDates);
 }
 
-/**
- * Validates the requested number of dates per player.
- *
- * @param {unknown} datesPerPlayer Candidate count.
- * @returns {void}
- */
+/** @param {unknown} datesPerPlayer Candidate count. */
 function validateDatesPerPlayer(datesPerPlayer) {
   if (!Number.isSafeInteger(datesPerPlayer) || datesPerPlayer <= 0) {
     throw new RangeError("datesPerPlayer must be a positive safe integer.");
@@ -252,7 +244,6 @@ function validateDatesPerPlayer(datesPerPlayer) {
  *
  * @param {unknown} selectedIndex Candidate index.
  * @param {number} poolLength Current pool length.
- * @returns {void}
  */
 function validateRandomIndex(selectedIndex, poolLength) {
   if (

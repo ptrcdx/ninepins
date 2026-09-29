@@ -1,4 +1,6 @@
-const DATE_COUNT = 3;
+const CURRENT_DATE_COUNT = 2;
+const LEGACY_DATE_COUNT = 3;
+const SUPPORTED_DATE_COUNTS = new Set([CURRENT_DATE_COUNT, LEGACY_DATE_COUNT]);
 const APPLICATION_TIME_ZONE = "Europe/Berlin";
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/u;
 const PROGRESS_SCHEMA_VERSION = 1;
@@ -53,7 +55,7 @@ export class PlayerDrawSession {
     this.synchronizeFromStorage();
 
     if (!this.hasRemainingDates()) {
-      throw new RangeError("Alle drei Termine sind bereits gezogen.");
+      throw new RangeError("Alle Termine sind bereits gezogen.");
     }
 
     const isoDate = this.dates[this.revealedCount];
@@ -89,7 +91,7 @@ export class PlayerDrawSession {
         state?.drawId !== this.drawId ||
         !Number.isInteger(state?.revealedCount) ||
         state.revealedCount < 0 ||
-        state.revealedCount > DATE_COUNT
+        state.revealedCount > this.dates.length
       ) {
         return 0;
       }
@@ -129,9 +131,12 @@ function validateVerifiedDraw(verifiedDraw) {
   if (typeof verifiedDraw?.drawId !== "string" || !verifiedDraw.drawId) {
     throw new RangeError("Der verifizierte Spielcode enthält keine Ziehungs-ID.");
   }
-  if (!Array.isArray(verifiedDraw.dates) || verifiedDraw.dates.length !== DATE_COUNT) {
+  if (
+    !Array.isArray(verifiedDraw.dates) ||
+    !SUPPORTED_DATE_COUNTS.has(verifiedDraw.dates.length)
+  ) {
     throw new RangeError(
-      `Der verifizierte Spielcode muss genau ${DATE_COUNT} Termine enthalten.`,
+      "Der verifizierte Spielcode muss genau zwei Termine enthalten; ältere Dreier-Spielcodes bleiben unterstützt.",
     );
   }
   if (!verifiedDraw.dates.every(

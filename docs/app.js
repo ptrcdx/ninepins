@@ -1,7 +1,7 @@
-import { PlayerDrawSession } from "./player-session.js";
-import { importVerificationKey, verifyDrawToken } from "./token.js?v=2";
+import { PlayerDrawSession } from "./player-session.js?v=2";
+import { importVerificationKey, verifyDrawToken } from "./token.js?v=3";
 import { installPumperellaVisualTheme } from "./visual-theme.js?v=2";
-import { installPlayerExperience } from "./player-experience.js?v=2";
+import { installPlayerExperience } from "./player-experience.js?v=3";
 
 const LEGACY_IDENTITY_QUERY_KEYS = Object.freeze([
   "player",
