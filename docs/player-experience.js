@@ -595,9 +595,9 @@ function addPinsetterBrand(setter, three) {
     transparent: true,
     depthWrite: false,
   });
-  const sign = new three.Mesh(new three.PlaneGeometry(4.02, 0.62), material);
+  const sign = new three.Mesh(new three.PlaneGeometry(4.18, 0.72), material);
   sign.name = "PumperellaPinsetterLogo";
-  sign.position.set(0, -0.15, 2.176);
+  sign.position.set(0, -0.12, 2.176);
   sign.renderOrder = 8;
   setter.add(sign);
 
@@ -652,40 +652,62 @@ function loadOfficialLogo(onLoad) {
 /** @param {typeof import("three")} three @param {CanvasImageSource|null} [logoImage=null] */
 function createPinsetterTexture(three, logoImage = null) {
   const canvas = document.createElement("canvas");
-  canvas.width = 1024;
-  canvas.height = 192;
+  canvas.width = 1536;
+  canvas.height = 256;
   const context = canvas.getContext("2d");
   context.clearRect(0, 0, canvas.width, canvas.height);
 
   const background = context.createLinearGradient(0, 0, 0, canvas.height);
-  background.addColorStop(0, "rgba(255,60,164,.16)");
-  background.addColorStop(0.55, "rgba(255,24,139,.05)");
+  background.addColorStop(0, "rgba(255,60,164,.11)");
+  background.addColorStop(0.58, "rgba(255,24,139,.035)");
   background.addColorStop(1, "rgba(255,24,139,0)");
   context.fillStyle = background;
   context.fillRect(0, 0, canvas.width, canvas.height);
 
   if (logoImage) {
-    drawOfficialEmblem(context, logoImage, 28, 14, 230, 196);
+    // Keep the official emblem intact on the left. The wordmark is rendered
+    // separately with measured width so it can never overlap or be clipped.
+    drawOfficialEmblem(context, logoImage, 34, 22, 258, 212);
   } else {
-    drawFallbackCrown(context, 143, 112, 0.72);
+    drawFallbackCrown(context, 164, 132, 0.76);
   }
+
+  const text = "PUMPERELLA";
+  const textLeft = 338;
+  const textRight = canvas.width - 42;
+  const maxTextWidth = textRight - textLeft;
+  let fontSize = 126;
 
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.font = "850 110px Inter, system-ui, sans-serif";
   context.lineJoin = "round";
-  context.shadowColor = "#ff2f9c";
-  context.shadowBlur = 18;
-  context.strokeStyle = "#ffedf6";
-  context.lineWidth = 12;
-  context.strokeText("PUMPERELLA", 640, 99);
+
+  do {
+    context.font = `900 ${fontSize}px Inter, system-ui, sans-serif`;
+    if (context.measureText(text).width <= maxTextWidth || fontSize <= 72) {
+      break;
+    }
+    fontSize -= 2;
+  } while (fontSize > 72);
+
+  const textX = textLeft + maxTextWidth / 2;
+  const textY = canvas.height / 2 + 2;
+
+  // A restrained outline stays readable at mobile render sizes without the
+  // smeared double-word effect caused by the previous oversized glow.
+  context.shadowColor = "rgba(255,47,156,.38)";
+  context.shadowBlur = 7;
+  context.strokeStyle = "rgba(255,237,246,.95)";
+  context.lineWidth = 5;
+  context.strokeText(text, textX, textY);
   context.shadowBlur = 0;
   context.fillStyle = "#ffffff";
-  context.fillText("PUMPERELLA", 940, 113);
+  context.fillText(text, textX, textY);
 
   const texture = new three.CanvasTexture(canvas);
   texture.colorSpace = three.SRGBColorSpace;
-  texture.anisotropy = 2;
+  texture.anisotropy = 4;
+  texture.needsUpdate = true;
   return texture;
 }
 
