@@ -15,7 +15,27 @@ export async function createPlayerSession() {
   const keyBundle = await loadVerificationKey();
   const publicKey = await importVerificationKey(keyBundle.publicKey);
   const verifiedDraw = await verifyDrawToken(token, publicKey);
-  return new PlayerDrawSession(verifiedDraw);
+  return new PlayerDrawSession(verifiedDraw, resolveProgressStorage());
+}
+
+/**
+ * Uses durable local storage when available and falls back to session storage.
+ *
+ * @returns {Storage|null} Browser storage for reload-safe player progress.
+ */
+function resolveProgressStorage() {
+  for (const storageName of ["localStorage", "sessionStorage"]) {
+    try {
+      const storage = window[storageName];
+      if (storage && typeof storage.getItem === "function" && typeof storage.setItem === "function") {
+        return storage;
+      }
+    } catch {
+      // Continue with the next storage option when privacy settings deny access.
+    }
+  }
+
+  return null;
 }
 
 /** @returns {Promise<{schemaVersion:number,algorithm:string,publicKey:JsonWebKey}>} */
