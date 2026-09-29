@@ -36,13 +36,24 @@ describe("PlayerDrawSession", () => {
     expect(session.getRevealedCount()).toBe(3);
   });
 
-  it("does not expose a fourth date", async () => {
+  it("does not expose a fourth date after the draw is complete", async () => {
     const session = new PlayerDrawSession(VERIFIED_DRAW);
     await session.drawDate();
     await session.drawDate();
     await session.drawDate();
 
+    expect(session.hasRemainingDates()).toBe(false);
+    expect(session.getRevealedDates()).toEqual([
+      "25.10.2026",
+      "08.01.2027",
+      "19.06.2027",
+    ]);
     await expect(session.drawDate()).rejects.toThrow("Alle drei Termine sind bereits gezogen.");
+    expect(session.getRevealedDates()).toEqual([
+      "25.10.2026",
+      "08.01.2027",
+      "19.06.2027",
+    ]);
   });
 
   it("keeps the original verified draw immutable from caller mutations", async () => {
