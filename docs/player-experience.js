@@ -1,9 +1,9 @@
 const THREE_MODULE_URL = "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
-const SCENE_HOOK_KEY = Symbol.for("pumperella.playerExperience.sceneHook.v8");
-const SCENE_PENDING_KEY = "pumperellaPlayerExperiencePendingV8";
-const SETTER_BRAND_KEY = "pumperellaPinsetterBrandV8";
-const BALL_BRAND_KEY = "pumperellaBallBrandV8";
-const STYLE_ID = "pumperella-player-experience-style-v8";
+const SCENE_HOOK_KEY = Symbol.for("pumperella.playerExperience.sceneHook.v9");
+const SCENE_PENDING_KEY = "pumperellaPlayerExperiencePendingV9";
+const SETTER_BRAND_KEY = "pumperellaPinsetterBrandV9";
+const BALL_BRAND_KEY = "pumperellaBallBrandV9";
+const STYLE_ID = "pumperella-player-experience-style-v9";
 const INLINE_PLAYER_ID = "pumperella-current-player-inline";
 const LEGACY_CARD_ID = "pumperella-current-player";
 const ARCHIVE_STORAGE_KEY = "ninepins.drawArchive.v2";
@@ -811,41 +811,57 @@ function createPinsetterTexture(three, logoImage = null) {
   const context = canvas.getContext("2d");
   context.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Keep the logo plane fully transparent outside the emblem and wordmark.
-  // A tinted full-canvas fill reads as a floating translucent bar in front of
-  // the mechanical housing, especially from the mobile camera angle.
-
-  if (logoImage) {
-    // Keep the official emblem intact on the left. The wordmark is rendered
-    // separately with measured width so it can never overlap or be clipped.
-    drawOfficialEmblem(context, logoImage, 34, 22, 258, 212);
-  } else {
-    drawFallbackCrown(context, 164, 132, 0.76);
-  }
-
+  // Center emblem and wordmark as one visual unit. Previously the emblem was
+  // pinned to the left while the text was centered independently, so the
+  // combined branding looked shifted to the right.
   const text = "PUMPERELLA";
-  const textLeft = 338;
-  const textRight = canvas.width - 42;
-  const maxTextWidth = textRight - textLeft;
+  const emblemWidth = 220;
+  const emblemHeight = 180;
+  const gap = 38;
+  const horizontalPadding = 48;
   let fontSize = 126;
 
-  context.textAlign = "center";
+  context.textAlign = "left";
   context.textBaseline = "middle";
   context.lineJoin = "round";
 
-  do {
+  const availableWidth = canvas.width - horizontalPadding * 2;
+  while (fontSize > 72) {
     context.font = `900 ${fontSize}px Inter, system-ui, sans-serif`;
-    if (context.measureText(text).width <= maxTextWidth || fontSize <= 72) {
+    const width = emblemWidth + gap + context.measureText(text).width;
+    if (width <= availableWidth) {
       break;
     }
     fontSize -= 2;
-  } while (fontSize > 72);
+  }
 
-  const textX = textLeft + maxTextWidth / 2;
+  context.font = `900 ${fontSize}px Inter, system-ui, sans-serif`;
+  const textWidth = context.measureText(text).width;
+  const groupWidth = emblemWidth + gap + textWidth;
+  const groupStartX = (canvas.width - groupWidth) / 2;
+  const emblemX = groupStartX;
+  const emblemY = (canvas.height - emblemHeight) / 2;
+  const textX = groupStartX + emblemWidth + gap;
   const textY = canvas.height / 2 + 2;
 
-  // Keep the wordmark crisp. The previous glow amplified depth artifacts on
-  // the pinsetter face and made the letters look doubled at mobile scale.
+  if (logoImage) {
+    drawOfficialEmblem(
+      context,
+      logoImage,
+      emblemX,
+      emblemY,
+      emblemWidth,
+      emblemHeight,
+    );
+  } else {
+    drawFallbackCrown(
+      context,
+      emblemX + emblemWidth / 2,
+      canvas.height / 2,
+      0.72,
+    );
+  }
+
   context.strokeStyle = "rgba(255,237,246,.96)";
   context.lineWidth = 3;
   context.strokeText(text, textX, textY);
