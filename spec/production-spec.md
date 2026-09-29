@@ -63,9 +63,9 @@ Ohne persönlichen Token, bei ungültiger Signatur oder fehlendem öffentlichen 
 7. Fällt der Ball in eine Gosse oder trifft keinen Kegel, wird kein Termin verbraucht; der Versuch wird wiederholt.
 8. Nach einem erfolgreichen Wurf bleiben die gefallenen Kegel sichtbar liegen.
 9. Erst die explizite Aktion „Nächster Wurf“ startet das Stellwerk und stellt die Kegel neu auf.
-10. Nach dem dritten erfolgreichen Wurf endet die Ziehung. Alle drei Termine bleiben dauerhaft in der Oberfläche sichtbar.
+10. Nach dem dritten erfolgreichen Wurf endet ausschließlich die Datumsziehung. Alle drei Termine bleiben dauerhaft in der Oberfläche sichtbar; anschließend kann ohne weitere Datumsziehung beliebig weitergespielt werden.
 
-Der bereits erspielte Fortschritt wird pro `drawId` lokal im Browser gespeichert. Ein Seiten-Reload oder erneutes Öffnen desselben persönlichen Links stellt bereits sichtbare Termine wieder her und setzt bei 1/3 oder 2/3 mit dem nächsten Termin fort; bei 3/3 bleibt das Spiel abgeschlossen. Da es bewusst keinen Serverzustand gibt, ist diese Fortschrittspersistenz geräte- und browserlokal.
+Der bereits erspielte Fortschritt wird pro `drawId` lokal im Browser gespeichert. Ein Seiten-Reload oder erneutes Öffnen desselben persönlichen Links stellt bereits sichtbare Termine wieder her und setzt bei 1/3 oder 2/3 mit dem nächsten Termin fort. Bei 3/3 bleibt das Ergebnis vollständig erhalten und die Anwendung startet im freien Spielmodus ohne weitere Datumsziehung. Da es bewusst keinen Serverzustand gibt, ist diese Fortschrittspersistenz geräte- und browserlokal.
 
 ## 6. Anforderungen an die 3D-Oberfläche
 
@@ -109,7 +109,7 @@ Bei Treffer:
 - Kegel bis zur expliziten Aktion „Nächster Wurf“ liegen lassen,
 - anschließend Stellwerk animieren und Kugel neu bereitstellen.
 
-Nach dem dritten Treffer gibt es keinen weiteren Wurf und keinen vierten Termin.
+Nach dem dritten erfolgreichen Treffer gibt es keinen vierten Termin. Weitere Würfe bleiben unbegrenzt möglich; Treffer und Fehlwürfe im freien Spiel verändern weder die drei Termine noch den gespeicherten Ziehungsfortschritt.
 
 ## 7. Physik- und Performance-Anforderungen
 
@@ -211,7 +211,7 @@ Die Implementierung ist fachlich abgenommen, wenn:
 - die Kugel vor jedem Versuch sichtbar und intuitiv ziehbar ist,
 - beide Gossen ohne Bumper funktionieren und keinen Kegeltreffer zulassen,
 - nach Treffer das Stellwerk erst durch „Nächster Wurf“ aktiviert wird,
-- nach dem dritten Termin keine weitere Ziehung möglich ist,
+- nach dem dritten Termin keine weitere Ziehung möglich ist, aber beliebig weitergekegelt werden kann,
 - ungültige oder manipulierte Links nicht spielbar sind,
 - der private Signaturschlüssel nicht im öffentlichen Repository enthalten ist,
 - CI grün ist und der manuelle WebGL-Smoke-Test bestanden wurde.
