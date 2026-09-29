@@ -1,6 +1,6 @@
 import { PlayerDrawSession } from "./player-session.js";
 import { importVerificationKey, verifyDrawToken } from "./token.js";
-import { installPumperellaVisualTheme } from "./visual-theme.js";
+import { installPumperellaVisualTheme } from "./visual-theme.js?v=2";
 
 /**
  * Verifies the personal URL token before any playable 3D state is created.
