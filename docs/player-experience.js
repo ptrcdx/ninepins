@@ -200,74 +200,101 @@ function installPlayerHud(playerName, dateCount) {
       }
       @media (max-width: 600px) {
         body.pumperella-two-date-draw .hud {
-          padding: max(8px, env(safe-area-inset-top)) 10px max(8px, env(safe-area-inset-bottom)) !important;
+          padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom)) !important;
         }
         body.pumperella-two-date-draw .top {
-          align-items: flex-start;
-          gap: 8px;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 116px;
+          align-items: start;
+          gap: 9px;
         }
         body.pumperella-two-date-draw .left-stack {
-          width: calc(100vw - 134px);
-          max-width: none;
-          gap: 0;
+          display: contents;
         }
         body.pumperella-two-date-draw .brand {
-          display: none;
-        }
-        body.pumperella-two-date-draw .dates {
+          display: flex;
+          grid-column: 1 / -1;
           width: 100%;
           min-width: 0;
           max-width: none;
-          padding: 8px 9px 9px;
+          min-height: 62px;
+          padding: 8px 12px;
+          gap: 10px;
+          border-radius: 15px;
+        }
+        body.pumperella-two-date-draw .brand-logo {
+          width: 46px;
+          height: 46px;
+          flex: 0 0 46px;
+        }
+        body.pumperella-two-date-draw .brand-copy {
+          gap: 2px;
+          min-width: 0;
+        }
+        body.pumperella-two-date-draw .brand-title {
+          font-size: 19px;
+          line-height: 1;
+        }
+        body.pumperella-two-date-draw .version {
+          font-size: 9px;
+          letter-spacing: .16em;
+        }
+        body.pumperella-two-date-draw .dates {
+          grid-column: 1;
+          width: 100%;
+          min-width: 0;
+          max-width: none;
+          padding: 10px 11px 11px;
           border-radius: 15px;
         }
         body.pumperella-two-date-draw .dates .card-heading {
-          gap: 6px;
-          margin-bottom: 5px;
+          gap: 7px;
+          margin-bottom: 7px;
         }
         body.pumperella-two-date-draw .dates .icon-badge {
-          width: 22px;
-          height: 22px;
-          border-radius: 7px;
+          width: 26px;
+          height: 26px;
+          border-radius: 8px;
         }
         body.pumperella-two-date-draw .dates .icon-badge svg {
-          width: 14px;
-          height: 14px;
+          width: 16px;
+          height: 16px;
         }
         body.pumperella-two-date-draw .dates .card-heading small {
-          font-size: 9px;
+          font-size: 10px;
           letter-spacing: .11em;
         }
         body.pumperella-two-date-draw .dates .pumperella-player-inline {
           display: flex;
           align-items: baseline;
-          margin: 0 0 6px;
-          padding: 0 0 6px;
+          margin: 0 0 8px;
+          padding: 0 0 8px;
           border: 0;
           border-bottom: 1px solid rgba(255,255,255,.09);
           border-radius: 0;
           background: none;
         }
         body.pumperella-two-date-draw .dates .pumperella-player-inline small {
-          font-size: 8px;
+          font-size: 9px;
           letter-spacing: .10em;
         }
         body.pumperella-two-date-draw .dates .pumperella-player-inline strong {
-          max-width: 66%;
+          max-width: 70%;
           margin: 0;
-          font-size: 12px;
+          font-size: 14px;
+          line-height: 1.15;
           text-align: right;
         }
         body.pumperella-two-date-draw .dates ol {
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 6px;
+          gap: 7px;
         }
         body.pumperella-two-date-draw .dates li {
           display: block;
           min-width: 0;
-          padding: 6px 7px;
+          padding: 8px 9px;
           border: 1px solid rgba(255,255,255,.08);
-          border-radius: 9px;
+          border-radius: 10px;
           background: rgba(255,255,255,.035);
         }
         body.pumperella-two-date-draw .dates li span {
@@ -276,75 +303,89 @@ function installPlayerHud(playerName, dateCount) {
         body.pumperella-two-date-draw .dates li strong {
           display: block;
           overflow: hidden;
-          font-size: 11px;
-          line-height: 1.15;
+          font-size: 13px;
+          line-height: 1.2;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
         body.pumperella-two-date-draw .status {
-          width: 106px;
-          min-width: 106px;
-          max-width: 106px;
-          padding: 8px 9px;
+          grid-column: 2;
+          width: 116px;
+          min-width: 116px;
+          max-width: 116px;
+          padding: 10px;
           border-radius: 15px;
         }
         body.pumperella-two-date-draw .status small {
-          font-size: 8px;
+          font-size: 9px;
           letter-spacing: .10em;
         }
         body.pumperella-two-date-draw .status strong {
-          margin-top: 3px;
-          font-size: 14px;
-          line-height: 1.08;
+          margin-top: 4px;
+          font-size: 16px;
+          line-height: 1.1;
         }
         body.pumperella-two-date-draw .result {
-          top: max(112px, calc(env(safe-area-inset-top) + 102px));
-          min-width: 210px;
+          top: max(174px, calc(env(safe-area-inset-top) + 164px));
+          min-width: 224px;
           max-width: calc(100vw - 24px);
-          padding: 9px 12px;
+          padding: 10px 13px;
         }
         body.pumperella-two-date-draw .result.date {
           display: none;
         }
         .hud .hint {
           width: min(620px, calc(100vw - 20px)) !important;
-          padding: 7px 10px 5px !important;
-          transform: translateY(5px);
+          padding: 9px 12px 7px !important;
+          transform: translateY(4px);
           border-radius: 16px !important;
         }
         .hud .hint strong {
-          font-size: 14px !important;
+          font-size: 16px !important;
         }
         .hud .hint span {
-          margin-top: 3px !important;
-          font-size: 10px !important;
-          line-height: 1.22 !important;
+          margin-top: 4px !important;
+          font-size: 12.5px !important;
+          line-height: 1.28 !important;
         }
         .hud .hint .meter {
-          margin-top: 5px !important;
+          height: 4px !important;
+          margin-top: 6px !important;
         }
         .hud .hint #next {
-          min-height: 34px !important;
-          margin-top: 6px !important;
-          padding: 5px 16px !important;
-          font-size: 13px !important;
+          min-height: 38px !important;
+          margin-top: 7px !important;
+          padding: 6px 18px !important;
+          font-size: 14px !important;
         }
       }
       @media (max-width: 380px) {
-        body.pumperella-two-date-draw .left-stack {
-          width: calc(100vw - 126px);
+        body.pumperella-two-date-draw .top {
+          grid-template-columns: minmax(0, 1fr) 106px;
+        }
+        body.pumperella-two-date-draw .brand {
+          min-height: 58px;
+          padding: 7px 10px;
+        }
+        body.pumperella-two-date-draw .brand-logo {
+          width: 42px;
+          height: 42px;
+          flex-basis: 42px;
+        }
+        body.pumperella-two-date-draw .brand-title {
+          font-size: 17px;
         }
         body.pumperella-two-date-draw .status {
-          width: 98px;
-          min-width: 98px;
-          max-width: 98px;
+          width: 106px;
+          min-width: 106px;
+          max-width: 106px;
         }
         body.pumperella-two-date-draw .dates .pumperella-player-inline strong {
-          max-width: 61%;
-          font-size: 11px;
+          max-width: 65%;
+          font-size: 13px;
         }
         body.pumperella-two-date-draw .dates li strong {
-          font-size: 10px;
+          font-size: 12px;
         }
       }
       @media (max-height: 560px) and (orientation: landscape) {
@@ -554,9 +595,9 @@ function addPinsetterBrand(setter, three) {
     transparent: true,
     depthWrite: false,
   });
-  const sign = new three.Mesh(new three.PlaneGeometry(3.36, 0.54), material);
+  const sign = new three.Mesh(new three.PlaneGeometry(4.02, 0.62), material);
   sign.name = "PumperellaPinsetterLogo";
-  sign.position.set(0, -0.16, 2.176);
+  sign.position.set(0, -0.15, 2.176);
   sign.renderOrder = 8;
   setter.add(sign);
 
@@ -624,14 +665,14 @@ function createPinsetterTexture(three, logoImage = null) {
   context.fillRect(0, 0, canvas.width, canvas.height);
 
   if (logoImage) {
-    drawOfficialEmblem(context, logoImage, 22, 7, 230, 178);
+    drawOfficialEmblem(context, logoImage, 28, 14, 230, 196);
   } else {
-    drawFallbackCrown(context, 134, 96, 0.70);
+    drawFallbackCrown(context, 143, 112, 0.72);
   }
 
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.font = "900 102px Inter, system-ui, sans-serif";
+  context.font = "850 110px Inter, system-ui, sans-serif";
   context.lineJoin = "round";
   context.shadowColor = "#ff2f9c";
   context.shadowBlur = 18;
@@ -640,7 +681,7 @@ function createPinsetterTexture(three, logoImage = null) {
   context.strokeText("PUMPERELLA", 640, 99);
   context.shadowBlur = 0;
   context.fillStyle = "#ffffff";
-  context.fillText("PUMPERELLA", 640, 99);
+  context.fillText("PUMPERELLA", 940, 113);
 
   const texture = new three.CanvasTexture(canvas);
   texture.colorSpace = three.SRGBColorSpace;
