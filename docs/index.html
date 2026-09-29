@@ -1049,18 +1049,8 @@ class BowlingApp {
       this.ui[`date-row-${number}`].className = 'revealed';
     });
 
-    if (!this.playerSession.hasRemainingDates()) {
-      this.mode = 'complete';
-      this.ui.status.textContent = 'Fertig';
-      this.ui.hintTitle.textContent = 'Alle drei Termine sind gezogen';
-      this.ui.hintText.textContent = 'Die Termine bleiben oben links sichtbar.';
-      this.ui.next.hidden = true;
-      document.body.classList.remove('is-aiming');
-      return;
-    }
-
     this.setReady();
-    if (revealedDates.length > 0) {
+    if (revealedDates.length > 0 && this.playerSession.hasRemainingDates()) {
       this.ui.status.textContent = `${revealedDates.length} von 3 gezogen`;
       this.ui.hintText.textContent = 'Dein bisheriger Fortschritt wurde wiederhergestellt. Ziehe die Kugel für den nächsten Termin.';
     }
@@ -1069,9 +1059,14 @@ class BowlingApp {
   /** Show ready state without resetting any pin orientation. */
   setReady() {
     this.mode = 'ready';
-    this.ui.status.textContent = 'Bereit';
-    this.ui.hintTitle.textContent = 'Kugel ber\u00fchren, zur\u00fcckziehen und loslassen';
-    this.ui.hintText.textContent = 'Nach unten ziehen = Kraft. Seitlich ziehen = Richtung. Enter oder Leertaste wirft geradeaus.';
+    const freePlay = !this.playerSession.hasRemainingDates();
+    this.ui.status.textContent = freePlay ? 'Freies Spiel' : 'Bereit';
+    this.ui.hintTitle.textContent = freePlay
+      ? 'Alle drei Termine sind gezogen · weiterspielen'
+      : 'Kugel ber\u00fchren, zur\u00fcckziehen und loslassen';
+    this.ui.hintText.textContent = freePlay
+      ? 'Weitere Würfe ändern deine Termine nicht. Nach unten ziehen = Kraft, seitlich ziehen = Richtung.'
+      : 'Nach unten ziehen = Kraft. Seitlich ziehen = Richtung. Enter oder Leertaste wirft geradeaus.';
     this.ui.power.style.width = '0%';
     this.ui.result.className = 'result';
     this.ui.next.hidden = true;
@@ -1216,15 +1211,19 @@ class BowlingApp {
     this.physics.finishShot();
     const missed = this.physics.gutter || this.physics.hitPins.size === 0;
     this.lastShotMissed = missed;
+    const hasDateToReveal = this.playerSession.hasRemainingDates();
+
     if (missed) {
       this.ui.result.className = 'result show gutter';
       this.ui.resultLabel.textContent = this.physics.gutter ? 'Gosse' : 'Kein Kegel getroffen';
       this.ui.resultValue.textContent = 'Versuch wiederholen';
       this.ui.status.textContent = 'Fehlwurf';
-      this.ui.hintTitle.textContent = 'Kein Datum gezogen';
-      this.ui.hintText.textContent = 'Der Versuch bleibt offen.';
+      this.ui.hintTitle.textContent = hasDateToReveal ? 'Kein Datum gezogen' : 'Freies Spiel';
+      this.ui.hintText.textContent = hasDateToReveal
+        ? 'Der Versuch bleibt offen.'
+        : 'Die drei gezogenen Termine bleiben unverändert.';
       this.ui.next.textContent = 'Erneut versuchen';
-    } else {
+    } else if (hasDateToReveal) {
       try {
         const date = await this.drawDate();
         this.drawNumber += 1;
@@ -1234,8 +1233,12 @@ class BowlingApp {
         this.ui.resultLabel.textContent = `Termin ${this.drawNumber} von 3`;
         this.ui.resultValue.textContent = date;
         this.ui.status.textContent = 'Wurf beendet';
-        this.ui.hintTitle.textContent = 'Die Kegel bleiben liegen';
-        this.ui.hintText.textContent = 'Erst beim nächsten Wurf stellt das Stellwerk sie neu auf.';
+        this.ui.hintTitle.textContent = this.playerSession.hasRemainingDates()
+          ? 'Die Kegel bleiben liegen'
+          : 'Alle drei Termine sind gezogen';
+        this.ui.hintText.textContent = this.playerSession.hasRemainingDates()
+          ? 'Erst beim nächsten Wurf stellt das Stellwerk sie neu auf.'
+          : 'Das Ergebnis bleibt unverändert. Mit „Nächster Wurf“ kannst du frei weiterspielen.';
         this.ui.next.textContent = 'Nächster Wurf';
       } catch (error) {
         console.error('Date resolution failed:', error);
@@ -1245,14 +1248,14 @@ class BowlingApp {
         this.ui.hintText.textContent = 'Kein automatischer zweiter Ziehversuch. Bitte den Anwendungsstatus pr\u00fcfen.';
         return;
       }
-    }
-    if (!missed && !this.playerSession.hasRemainingDates()) {
-      this.mode = 'complete';
-      this.ui.next.hidden = true;
-      this.ui.status.textContent = 'Fertig';
-      this.ui.hintTitle.textContent = 'Alle drei Termine sind gezogen';
-      this.ui.hintText.textContent = 'Die Termine bleiben oben links sichtbar.';
-      return;
+    } else {
+      this.ui.result.className = 'result show';
+      this.ui.resultLabel.textContent = 'Freies Spiel';
+      this.ui.resultValue.textContent = 'Treffer';
+      this.ui.status.textContent = 'Wurf beendet';
+      this.ui.hintTitle.textContent = 'Termine bleiben unverändert';
+      this.ui.hintText.textContent = 'Alle drei Termine sind bereits gezogen. Du kannst beliebig weiterspielen.';
+      this.ui.next.textContent = 'Nächster Wurf';
     }
 
     this.mode = 'result';
