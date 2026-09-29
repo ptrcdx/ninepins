@@ -1,9 +1,9 @@
 const THREE_MODULE_URL = "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
-const SCENE_HOOK_KEY = Symbol.for("pumperella.playerExperience.sceneHook.v7");
-const SCENE_PENDING_KEY = "pumperellaPlayerExperiencePendingV7";
-const SETTER_BRAND_KEY = "pumperellaPinsetterBrandV7";
-const BALL_BRAND_KEY = "pumperellaBallBrandV7";
-const STYLE_ID = "pumperella-player-experience-style-v7";
+const SCENE_HOOK_KEY = Symbol.for("pumperella.playerExperience.sceneHook.v8");
+const SCENE_PENDING_KEY = "pumperellaPlayerExperiencePendingV8";
+const SETTER_BRAND_KEY = "pumperellaPinsetterBrandV8";
+const BALL_BRAND_KEY = "pumperellaBallBrandV8";
+const STYLE_ID = "pumperella-player-experience-style-v8";
 const INLINE_PLAYER_ID = "pumperella-current-player-inline";
 const LEGACY_CARD_ID = "pumperella-current-player";
 const ARCHIVE_STORAGE_KEY = "ninepins.drawArchive.v2";
@@ -681,9 +681,12 @@ function addPinsetterBrand(setter, three) {
     polygonOffsetUnits: -4,
     toneMapped: false,
   });
-  const sign = new three.Mesh(new three.PlaneGeometry(4.18, 0.72), material);
+  // Put the branding on the lower front housing instead of the upper lip.
+  // This keeps the top edge mechanically clean and makes the logo read as a
+  // printed mark on the pinsetter body rather than a floating sign.
+  const sign = new three.Mesh(new three.PlaneGeometry(3.72, 0.52), material);
   sign.name = "PumperellaPinsetterLogo";
-  sign.position.set(0, -0.12, 2.235);
+  sign.position.set(0, -0.82, 2.145);
   sign.renderOrder = 100;
   setter.add(sign);
 
