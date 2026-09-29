@@ -79,6 +79,9 @@ Der bereits erspielte Fortschritt wird pro `drawId` lokal im Browser gespeichert
 - Ein Ball in der Gosse kann keine Kegel mehr treffen.
 - Hinter den Kegeln liegt ein dunkler Fang-/Grubenbereich; der Ball wird dort absorbiert und darf nicht auf die Bahn zurückspringen.
 - Kegelkontur und rote Halsringe entsprechen dem freigegebenen V27-Prototyp.
+- Die Szenerie orientiert sich an der freigegebenen Pumperella-Neonvariante: dunkler Raum, magenta Akzentlicht entlang der Bahn, Crown-Sign über dem Kegeldeck und dezente reflektierende Flächen neben der Bahn.
+- Die Szenerie wird ohne Post-Processing und ohne browserkritische Spezialeffekte umgesetzt; verwendet werden ausschließlich Standard-Three.js-Materialien, einfache Meshes und CanvasTexture-basierte Grafiken.
+- Die Darstellung muss auf aktuellen mobilen Browsern stabil laufen, insbesondere Safari auf iOS sowie Chrome und Edge auf Android.
 
 ### 6.2 Pumperella-Branding
 
