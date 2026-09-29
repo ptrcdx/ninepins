@@ -14,6 +14,9 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 const TEXT_ENCODER = new TextEncoder();
 const TEXT_DECODER = new TextDecoder("utf-8", { fatal: true });
+const PLAYER_NAME_PROVIDER_KEY = Symbol.for(
+  "pumperella.signing.playerNameProvider",
+);
 
 /** @returns {string} RFC 4122 UUID string. */
 export function generateDrawId() {
@@ -75,21 +78,30 @@ export async function importPrivateKeyJwk(jwk) {
  * - 1 byte UTF-8 player-name byte length
  * - player-name bytes
  *
- * @param {{drawId:string,dates:string[],playerName:string}} draw Draw data.
+ * @param {{drawId:string,dates:string[],playerName?:string}} draw Draw data.
  * @returns {Uint8Array} Serialized payload.
  */
-export function encodeDrawPayload({ drawId, dates, playerName }) {
+export function encodeDrawPayload(draw) {
+  if (!draw || typeof draw !== "object") {
+    throw new TypeError("Draw data must be an object.");
+  }
+
+  const { drawId, dates } = draw;
   const uuidBytes = uuidToBytes(drawId);
   validateDates(dates);
-  const normalizedPlayerName = normalizePlayerName(playerName);
+  const normalizedPlayerName = resolvePlayerName(draw);
   const playerNameBytes = TEXT_ENCODER.encode(normalizedPlayerName);
 
   if (playerNameBytes.byteLength > MAX_PLAYER_NAME_BYTES) {
-    throw new RangeError(`Player name must use at most ${MAX_PLAYER_NAME_BYTES} UTF-8 bytes.`);
+    throw new RangeError(
+      `Player name must use at most ${MAX_PLAYER_NAME_BYTES} UTF-8 bytes.`,
+    );
   }
 
   const payload = new Uint8Array(
-    BASE_PAYLOAD_BYTE_LENGTH + PLAYER_NAME_LENGTH_BYTE_LENGTH + playerNameBytes.byteLength,
+    BASE_PAYLOAD_BYTE_LENGTH +
+      PLAYER_NAME_LENGTH_BYTE_LENGTH +
+      playerNameBytes.byteLength,
   );
   const view = new DataView(payload.buffer);
   payload[0] = TOKEN_VERSION;
@@ -97,11 +109,18 @@ export function encodeDrawPayload({ drawId, dates, playerName }) {
 
   dates.forEach((date, index) => {
     const dayNumber = parseIsoDate(date) / MILLISECONDS_PER_DAY;
-    view.setUint32(1 + UUID_BYTE_LENGTH + index * DATE_BYTE_LENGTH, dayNumber, false);
+    view.setUint32(
+      1 + UUID_BYTE_LENGTH + index * DATE_BYTE_LENGTH,
+      dayNumber,
+      false,
+    );
   });
 
   payload[BASE_PAYLOAD_BYTE_LENGTH] = playerNameBytes.byteLength;
-  payload.set(playerNameBytes, BASE_PAYLOAD_BYTE_LENGTH + PLAYER_NAME_LENGTH_BYTE_LENGTH);
+  payload.set(
+    playerNameBytes,
+    BASE_PAYLOAD_BYTE_LENGTH + PLAYER_NAME_LENGTH_BYTE_LENGTH,
+  );
   return payload;
 }
 
@@ -112,14 +131,19 @@ export function encodeDrawPayload({ drawId, dates, playerName }) {
  * @returns {{drawId:string,dates:string[],playerName:string|null}} Decoded draw.
  */
 export function decodeDrawPayload(payload) {
-  if (!(payload instanceof Uint8Array) || payload.byteLength < BASE_PAYLOAD_BYTE_LENGTH) {
+  if (
+    !(payload instanceof Uint8Array) ||
+    payload.byteLength < BASE_PAYLOAD_BYTE_LENGTH
+  ) {
     throw new RangeError("Draw payload is too short.");
   }
 
   const version = payload[0];
   if (version === LEGACY_TOKEN_VERSION) {
     if (payload.byteLength !== BASE_PAYLOAD_BYTE_LENGTH) {
-      throw new RangeError(`Legacy draw payload must contain exactly ${BASE_PAYLOAD_BYTE_LENGTH} bytes.`);
+      throw new RangeError(
+        `Legacy draw payload must contain exactly ${BASE_PAYLOAD_BYTE_LENGTH} bytes.`,
+      );
     }
     return decodeBasePayload(payload, null);
   }
@@ -134,9 +158,13 @@ export function decodeDrawPayload(payload) {
   }
 
   const expectedLength =
-    BASE_PAYLOAD_BYTE_LENGTH + PLAYER_NAME_LENGTH_BYTE_LENGTH + playerNameLength;
+    BASE_PAYLOAD_BYTE_LENGTH +
+    PLAYER_NAME_LENGTH_BYTE_LENGTH +
+    playerNameLength;
   if (payload.byteLength !== expectedLength) {
-    throw new RangeError("Draw payload length does not match its player-name length.");
+    throw new RangeError(
+      "Draw payload length does not match its player-name length.",
+    );
   }
 
   let decodedPlayerName;
@@ -145,7 +173,10 @@ export function decodeDrawPayload(payload) {
       payload.slice(BASE_PAYLOAD_BYTE_LENGTH + PLAYER_NAME_LENGTH_BYTE_LENGTH),
     );
   } catch (error) {
-    throw new RangeError("Draw payload contains an invalid UTF-8 player name.", { cause: error });
+    throw new RangeError(
+      "Draw payload contains an invalid UTF-8 player name.",
+      { cause: error },
+    );
   }
 
   const playerName = normalizePlayerName(decodedPlayerName);
@@ -158,7 +189,7 @@ export function decodeDrawPayload(payload) {
 /**
  * Creates an authenticated URL-safe token.
  *
- * @param {{drawId:string,dates:string[],playerName:string}} draw Draw data.
+ * @param {{drawId:string,dates:string[],playerName?:string}} draw Draw data.
  * @param {CryptoKey} privateKey ECDSA P-256 private key.
  * @returns {Promise<string>} Signed token.
  */
@@ -205,7 +236,9 @@ export function normalizePlayerName(value) {
     throw new RangeError("Player name must not be empty.");
   }
   if ([...normalized].length > MAX_PLAYER_NAME_CHARACTERS) {
-    throw new RangeError(`Player name must contain at most ${MAX_PLAYER_NAME_CHARACTERS} characters.`);
+    throw new RangeError(
+      `Player name must contain at most ${MAX_PLAYER_NAME_CHARACTERS} characters.`,
+    );
   }
   return normalized;
 }
@@ -216,12 +249,19 @@ export function bytesToBase64Url(bytes) {
     throw new TypeError("Base64URL input must be a Uint8Array.");
   }
   const binary = String.fromCharCode(...bytes);
-  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
+  return btoa(binary)
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replace(/=+$/u, "");
 }
 
 /** @param {string} value @returns {Uint8Array} */
 export function base64UrlToBytes(value) {
-  if (typeof value !== "string" || value.length === 0 || !BASE64URL_PATTERN.test(value)) {
+  if (
+    typeof value !== "string" ||
+    value.length === 0 ||
+    !BASE64URL_PATTERN.test(value)
+  ) {
     throw new RangeError("Invalid Base64URL value.");
   }
   const base64 = value.replaceAll("-", "+").replaceAll("_", "/");
@@ -234,9 +274,29 @@ export function base64UrlToBytes(value) {
   }
 }
 
+function resolvePlayerName(draw) {
+  if (typeof draw.playerName === "string") {
+    return normalizePlayerName(draw.playerName);
+  }
+
+  const provider = globalThis[PLAYER_NAME_PROVIDER_KEY];
+  if (typeof provider === "function") {
+    return normalizePlayerName(provider({
+      drawId: draw.drawId,
+      dates: draw.dates,
+    }));
+  }
+
+  return normalizePlayerName(draw.playerName);
+}
+
 function decodeBasePayload(payload, playerName) {
   const uuidBytes = payload.slice(1, 1 + UUID_BYTE_LENGTH);
-  const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+  const view = new DataView(
+    payload.buffer,
+    payload.byteOffset,
+    payload.byteLength,
+  );
   const dates = Array.from({ length: DATE_COUNT }, (_, index) => {
     const dayNumber = view.getUint32(
       1 + UUID_BYTE_LENGTH + index * DATE_BYTE_LENGTH,
@@ -279,14 +339,18 @@ function uuidToBytes(uuid) {
 }
 
 function bytesToUuid(bytes) {
-  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  const hex = Array.from(bytes, (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
 function requireSubtleCrypto() {
   const subtle = globalThis.crypto?.subtle;
   if (!subtle) {
-    throw new Error("A Web Crypto compatible SubtleCrypto implementation is required.");
+    throw new Error(
+      "A Web Crypto compatible SubtleCrypto implementation is required.",
+    );
   }
   return subtle;
 }
