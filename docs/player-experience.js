@@ -1,9 +1,9 @@
 const THREE_MODULE_URL = "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
-const SCENE_HOOK_KEY = Symbol.for("pumperella.playerExperience.sceneHook.v6");
-const SCENE_PENDING_KEY = "pumperellaPlayerExperiencePendingV6";
-const SETTER_BRAND_KEY = "pumperellaPinsetterBrandV6";
-const BALL_BRAND_KEY = "pumperellaBallBrandV6";
-const STYLE_ID = "pumperella-player-experience-style-v6";
+const SCENE_HOOK_KEY = Symbol.for("pumperella.playerExperience.sceneHook.v7");
+const SCENE_PENDING_KEY = "pumperellaPlayerExperiencePendingV7";
+const SETTER_BRAND_KEY = "pumperellaPinsetterBrandV7";
+const BALL_BRAND_KEY = "pumperellaBallBrandV7";
+const STYLE_ID = "pumperella-player-experience-style-v7";
 const INLINE_PLAYER_ID = "pumperella-current-player-inline";
 const LEGACY_CARD_ID = "pumperella-current-player";
 const ARCHIVE_STORAGE_KEY = "ninepins.drawArchive.v2";
@@ -808,12 +808,9 @@ function createPinsetterTexture(three, logoImage = null) {
   const context = canvas.getContext("2d");
   context.clearRect(0, 0, canvas.width, canvas.height);
 
-  const background = context.createLinearGradient(0, 0, 0, canvas.height);
-  background.addColorStop(0, "rgba(255,60,164,.11)");
-  background.addColorStop(0.58, "rgba(255,24,139,.035)");
-  background.addColorStop(1, "rgba(255,24,139,0)");
-  context.fillStyle = background;
-  context.fillRect(0, 0, canvas.width, canvas.height);
+  // Keep the logo plane fully transparent outside the emblem and wordmark.
+  // A tinted full-canvas fill reads as a floating translucent bar in front of
+  // the mechanical housing, especially from the mobile camera angle.
 
   if (logoImage) {
     // Keep the official emblem intact on the left. The wordmark is rendered
