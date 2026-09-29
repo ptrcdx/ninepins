@@ -80,7 +80,17 @@ Der bereits erspielte Fortschritt wird pro `drawId` lokal im Browser gespeichert
 - Hinter den Kegeln liegt ein dunkler Fang-/Grubenbereich; der Ball wird dort absorbiert und darf nicht auf die Bahn zurückspringen.
 - Kegelkontur und rote Halsringe entsprechen dem freigegebenen V27-Prototyp.
 
-### 6.2 Bedienung
+### 6.2 Pumperella-Branding
+
+- Das offizielle Vereinslogo wird als kompaktes Logo-Asset in der Brand-Card links oben verwendet.
+- Die HUD-Karten verwenden dunkle, halbtransparente Oberflächen mit zurückhaltenden Pink-/Magenta-Akzenten aus dem Vereinslogo.
+- Die Terminliste bleibt funktional unverändert, erhält jedoch einen klaren Kalender-Header und hervorgehobene bereits gezogene Termine.
+- Der Status rechts oben bleibt kompakt und eindeutig lesbar; der Zustand „Freies Spiel“ wird nach 3/3 Terminen ausdrücklich angezeigt.
+- Die Bahn erhält ein dezentes, nicht spielbeeinflussendes Pumperella-Wort-/Kronen-Branding im Holzbereich.
+- Magenta-Lichtakzente entlang der Bahn dienen ausschließlich der visuellen Markenführung und verändern weder Gossen-Geometrie noch Ball-/Kegelphysik.
+- Das Branding darf die Kugel, Kegel, Zielanzeige, Ergebnisanzeige oder Bedienhinweise auf Desktop und Mobile nicht verdecken.
+
+### 6.3 Bedienung
 
 - Die Kugel liegt im Bereitschaftszustand sichtbar vorne auf der Bahn.
 - Ein pulsierender Marker und die Anweisung erklären die Geste.
@@ -91,7 +101,7 @@ Der bereits erspielte Fortschritt wird pro `drawId` lokal im Browser gespeichert
 - Pointer-Cancel, Resize oder verlorener Pointer-Capture dürfen niemals einen Wurf auslösen.
 - Als Tastatur-Alternative lösen Enter oder Leertaste einen reproduzierbaren geraden Wurf aus.
 
-### 6.3 Treffer- und Fehlwurfregeln
+### 6.4 Treffer- und Fehlwurfregeln
 
 Ein erfolgreicher Spielwurf liegt genau dann vor, wenn mindestens ein Kegel vom Ball getroffen wurde und der Ball nicht vorher als Gossenwurf klassifiziert wurde.
 
