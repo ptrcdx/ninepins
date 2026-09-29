@@ -48,6 +48,8 @@ Jeder Spielerlink enthält im URL-Fragment einen kompakten signierten Token. Der
 
 Die Signatur verwendet ECDSA P-256 mit SHA-256. Die Spieler-App lädt ausschließlich den öffentlichen Verifikationsschlüssel und akzeptiert den Token nur bei gültiger Signatur.
 
+Der Spielername wird zusätzlich als URL-Query-Parameter übertragen und dient ausschließlich der sichtbaren Beschriftung „Aktuell spielt“. Er ist bewusst nicht Teil des signierten Ziehungstokens und darf daher niemals für Datumszuordnung, Autorisierung oder Fortschrittsidentität verwendet werden. Manipulationen des Namens ändern ausschließlich die Anzeige; die signierten Termine und die `drawId` bleiben davon unberührt.
+
 Das URL-Fragment wird bei normalen HTTP-Anfragen nicht an GitHub Pages übertragen. Der Token ist jedoch keine Verschlüsselung: Wer den Link besitzt, kann den Payload prinzipiell dekodieren. Die Signatur schützt Authentizität und Integrität, nicht Vertraulichkeit.
 
 Ohne persönlichen Token, bei ungültiger Signatur oder fehlendem öffentlichen Schlüssel darf die spielbare 3D-Bahn nicht freigegeben werden.
@@ -86,8 +88,10 @@ Der bereits erspielte Fortschritt wird pro `drawId` lokal im Browser gespeichert
 ### 6.2 Pumperella-Branding
 
 - Das offizielle Vereinslogo wird als kompaktes Logo-Asset in der Brand-Card links oben verwendet.
+- Das Pumperella-Logo wird zusätzlich als beleuchtete Plakette auf der Vorderseite des beweglichen Kegelwiederaufstellers dargestellt und bewegt sich mit dessen Stellwerkzyklus.
 - Die HUD-Karten verwenden dunkle, halbtransparente Oberflächen mit zurückhaltenden Pink-/Magenta-Akzenten aus dem Vereinslogo.
 - Die Terminliste bleibt funktional unverändert, erhält jedoch einen klaren Kalender-Header und hervorgehobene bereits gezogene Termine.
+- Der Name der aktuell spielenden Person wird in einer eigenen HUD-Karte mit der Überschrift „Aktuell spielt“ dargestellt.
 - Der Status rechts oben bleibt kompakt und eindeutig lesbar; der Zustand „Freies Spiel“ wird nach 3/3 Terminen ausdrücklich angezeigt.
 - Die Bahn erhält ein dezentes, nicht spielbeeinflussendes Pumperella-Wort-/Kronen-Branding im Holzbereich.
 - Magenta-Lichtakzente entlang der Bahn dienen ausschließlich der visuellen Markenführung und verändern weder Gossen-Geometrie noch Ball-/Kegelphysik.
@@ -96,6 +100,7 @@ Der bereits erspielte Fortschritt wird pro `drawId` lokal im Browser gespeichert
 ### 6.3 Bedienung
 
 - Die Kugel liegt im Bereitschaftszustand sichtbar vorne auf der Bahn.
+- Die untere Hinweisbox ist so kompakt und tief positioniert, dass die startbereite Kugel vollständig sichtbar und direkt mit Maus, Touch oder Pen erreichbar bleibt.
 - Ein pulsierender Marker und die Anweisung erklären die Geste.
 - Nach unten ziehen steuert die Kraft.
 - Seitliches Ziehen steuert die Richtung; die Abschussrichtung ist die Gegenrichtung der Zugbewegung.
@@ -147,7 +152,7 @@ Fällt das CDN oder WebGL aus, muss die Anwendung einen sichtbaren Fehlerzustand
 
 ## 8. Dauerhafte Terminanzeige und UI-Zustände
 
-Die HUD-Oberfläche zeigt Marke, Status, drei Termin-Slots, Bedienhinweis, Kraftanzeige, Ergebnis-Overlay und den kontextabhängigen Button für Wiederholung oder nächsten Wurf.
+Die HUD-Oberfläche zeigt Marke, aktuell spielende Person, Status, drei Termin-Slots, Bedienhinweis, Kraftanzeige, Ergebnis-Overlay und den kontextabhängigen Button für Wiederholung oder nächsten Wurf.
 
 Termin-Slots starten mit „Noch verdeckt“ und werden ausschließlich nach erfolgreichen Würfen in der Reihenfolge des verifizierten Tokens aufgedeckt.
 
@@ -182,6 +187,7 @@ Mindestens folgende Zustände sind explizit abzubilden:
 - Ein ungültiger Link startet keine spielbare Session.
 - Ein Fehlwurf verändert die Anzahl verbleibender Termine nicht.
 - Die drei signierten Termine werden nie neu ausgelost oder von der Physik bestimmt.
+- Der unverschlüsselte Spielername im Query-Parameter ist nicht sicherheitsrelevant und darf nie die `drawId`, Termine oder Fortschrittsspeicherung beeinflussen.
 - Die Spieler-App hat keinen Schreibzugriff auf Admin-Archiv oder Signaturschlüssel.
 
 ## 11. Qualitätssicherung und CI
@@ -194,9 +200,11 @@ Bei Push und Pull Request gegen `main` führt GitHub Actions die Vitest-Suite mi
 - Token-Encoding/-Decoding und Signaturprüfung,
 - Manipulationsschutz,
 - Interoperabilität von Admin-Token und Player-Verifikation,
-- genau drei sequentielle Terminfreigaben ohne vierten Termin.
+- genau drei sequentielle Terminfreigaben ohne vierten Termin,
+- Erzeugung persönlicher Links mit kodiertem Spielernamen unter unverändertem Signaturfragment,
+- Auflösung und Fallback des sichtbaren Spielernamens.
 
-Die WebGL-Physik benötigt zusätzlich einen manuellen Browser-Smoke-Test auf mindestens einem aktuellen Chromium-Browser und einem mobilen Browser, insbesondere für Pointer-Gesten, Gossenverhalten, Pinsetter und Responsive Camera.
+Die WebGL-Physik benötigt zusätzlich einen manuellen Browser-Smoke-Test auf mindestens einem aktuellen Chromium-Browser und einem mobilen Browser, insbesondere für Pointer-Gesten, Gossenverhalten, Pinsetter, Logo-Plakette, Kugelsichtbarkeit und Responsive Camera.
 
 ## 12. Deployment
 
@@ -221,7 +229,9 @@ Die Implementierung ist fachlich abgenommen, wenn:
 - Start- und Enddatum frei administrierbar und inklusive sind,
 - alle drei Termine nur durch drei erfolgreiche Kegeltreffer sichtbar werden,
 - beliebig viele Fehlwürfe möglich sind, ohne einen Termin zu verbrauchen,
-- die Kugel vor jedem Versuch sichtbar und intuitiv ziehbar ist,
+- die Kugel vor jedem Versuch vollständig sichtbar, intuitiv ziehbar und nicht durch die Hinweisbox verdeckt ist,
+- der Name der aktuell spielenden Person sichtbar angezeigt wird,
+- die Pumperella-Logo-Plakette auf dem Kegelwiederaufsteller sichtbar ist und sich mit ihm bewegt,
 - beide Gossen ohne Bumper funktionieren und keinen Kegeltreffer zulassen,
 - nach Treffer das Stellwerk erst durch „Nächster Wurf“ aktiviert wird,
 - nach dem dritten Termin keine weitere Ziehung möglich ist, aber beliebig weitergekegelt werden kann,
