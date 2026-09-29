@@ -740,7 +740,7 @@ class BowlingApp {
     this.previousFrame = null;
     this.setterTime = 0;
     this.didPlacePins = false;
-    this.drawNumber = 0;
+    this.drawNumber = this.playerSession.getRevealedCount();
     this.lastShotMissed = false;
     this.ui = {};
     for (const id of ['app', 'status', 'hintTitle', 'hintText', 'power', 'result', 'resultLabel', 'resultValue', 'aim', 'marker', 'next', 'date-1', 'date-2', 'date-3', 'date-row-1', 'date-row-2', 'date-row-3']) {
@@ -764,7 +764,7 @@ class BowlingApp {
     this.onContextLost = this.onContextLost.bind(this);
     this.resize();
     this.bindEvents();
-    this.setReady();
+    this.restorePlayerProgress();
     this.sync();
     requestAnimationFrame(this.tick);
   }
@@ -1036,6 +1036,34 @@ class BowlingApp {
       y: rect.top + (1 - position.y) * rect.height / 2,
       radius: Math.abs(edge.x - position.x) * rect.width / 2
     };
+  }
+
+  /** Restores already revealed dates and the correct gameplay state after a reload. */
+  restorePlayerProgress() {
+    const revealedDates = this.playerSession.getRevealedDates();
+    this.drawNumber = revealedDates.length;
+
+    revealedDates.forEach((date, index) => {
+      const number = index + 1;
+      this.ui[`date-${number}`].textContent = date;
+      this.ui[`date-row-${number}`].className = 'revealed';
+    });
+
+    if (!this.playerSession.hasRemainingDates()) {
+      this.mode = 'complete';
+      this.ui.status.textContent = 'Fertig';
+      this.ui.hintTitle.textContent = 'Alle drei Termine sind gezogen';
+      this.ui.hintText.textContent = 'Die Termine bleiben oben links sichtbar.';
+      this.ui.next.hidden = true;
+      document.body.classList.remove('is-aiming');
+      return;
+    }
+
+    this.setReady();
+    if (revealedDates.length > 0) {
+      this.ui.status.textContent = `${revealedDates.length} von 3 gezogen`;
+      this.ui.hintText.textContent = 'Dein bisheriger Fortschritt wurde wiederhergestellt. Ziehe die Kugel für den nächsten Termin.';
+    }
   }
 
   /** Show ready state without resetting any pin orientation. */
