@@ -1,9 +1,9 @@
 const THREE_MODULE_URL = "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
-const SCENE_HOOK_KEY = Symbol.for("pumperella.playerExperience.sceneHook.v4");
-const SCENE_PENDING_KEY = "pumperellaPlayerExperiencePendingV4";
-const SETTER_BRAND_KEY = "pumperellaPinsetterBrandV4";
-const BALL_BRAND_KEY = "pumperellaBallBrandV4";
-const STYLE_ID = "pumperella-player-experience-style-v4";
+const SCENE_HOOK_KEY = Symbol.for("pumperella.playerExperience.sceneHook.v5");
+const SCENE_PENDING_KEY = "pumperellaPlayerExperiencePendingV5";
+const SETTER_BRAND_KEY = "pumperellaPinsetterBrandV5";
+const BALL_BRAND_KEY = "pumperellaBallBrandV5";
+const STYLE_ID = "pumperella-player-experience-style-v5";
 const INLINE_PLAYER_ID = "pumperella-current-player-inline";
 const LEGACY_CARD_ID = "pumperella-current-player";
 const ARCHIVE_STORAGE_KEY = "ninepins.drawArchive.v2";
@@ -618,33 +618,98 @@ function addPinsetterBrand(setter, three) {
 /** @param {import("three").Mesh} ball @param {typeof import("three")} three */
 function addOfficialCrownToBall(ball, three) {
   for (const child of ball.children) {
-    if (child.isSprite) {
+    if (child.isSprite || child.name === "PumperellaOfficialBallCrown") {
       child.visible = false;
     }
   }
 
-  const material = new three.SpriteMaterial({
-    map: createBallCrownTexture(three),
-    transparent: true,
-    depthWrite: false,
-  });
-  const emblem = new three.Sprite(material);
   const radius = ball.geometry?.parameters?.radius ?? 0.33;
   const crownOffset = resolveBallCrownOffset(radius);
-  emblem.name = "PumperellaOfficialBallCrown";
-  emblem.scale.set(0.46, 0.31, 1);
-  // The launch camera sits about 30 degrees above the ball. Put the crown on
-  // that camera-facing normal so the initial view is frontal, not downward.
-  emblem.position.set(...crownOffset);
-  emblem.renderOrder = 9;
-  ball.add(emblem);
+  const normal = new three.Vector3(...crownOffset).normalize();
 
-  loadOfficialLogo((image) => {
-    const previous = material.map;
-    material.map = createBallCrownTexture(three, image);
-    material.needsUpdate = true;
-    previous?.dispose();
+  // Use a real plane tangent to the sphere instead of a Sprite. A Sprite always
+  // faces the camera and therefore looked like a loose sticker. This mesh keeps
+  // its orientation relative to the ball and rotates naturally with it.
+  const geometry = new three.PlaneGeometry(0.32, 0.17);
+  const material = new three.MeshBasicMaterial({
+    map: createBallPrintTexture(three),
+    transparent: true,
+    alphaTest: 0.08,
+    depthTest: true,
+    depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
+    toneMapped: false,
+    side: three.DoubleSide,
   });
+  const emblem = new three.Mesh(geometry, material);
+
+  emblem.name = "PumperellaOfficialBallCrown";
+  emblem.position.copy(normal).multiplyScalar(radius + 0.0035);
+  emblem.quaternion.setFromUnitVectors(
+    new three.Vector3(0, 0, 1),
+    normal,
+  );
+  emblem.renderOrder = 10;
+  ball.add(emblem);
+}
+
+/** @param {typeof import("three")} three */
+function createBallPrintTexture(three) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 256;
+  const context = canvas.getContext("2d");
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+
+  // Deliberately draw only the crown mark. The official source logo contains
+  // a pink ball in the middle, which read as a hole when placed on a pink ball.
+  context.strokeStyle = "rgba(255,247,251,.98)";
+  context.fillStyle = "rgba(255,247,251,.98)";
+  context.lineWidth = 15;
+  context.lineJoin = "round";
+  context.lineCap = "round";
+
+  const crown = [
+    [80, 166],
+    [128, 96],
+    [196, 146],
+    [256, 68],
+    [316, 146],
+    [384, 96],
+    [432, 166],
+  ];
+
+  context.beginPath();
+  crown.forEach(([x, y], index) => {
+    if (index === 0) context.moveTo(x, y);
+    else context.lineTo(x, y);
+  });
+  context.stroke();
+
+  context.beginPath();
+  context.moveTo(104, 166);
+  context.quadraticCurveTo(256, 214, 408, 166);
+  context.stroke();
+
+  for (const [x, y, r] of [
+    [128, 96, 11],
+    [256, 68, 13],
+    [384, 96, 11],
+  ]) {
+    context.beginPath();
+    context.arc(x, y, r, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  const texture = new three.CanvasTexture(canvas);
+  texture.colorSpace = three.SRGBColorSpace;
+  texture.anisotropy = 4;
+  texture.needsUpdate = true;
+  return texture;
 }
 
 /** @param {(image:HTMLImageElement)=>void} onLoad */
