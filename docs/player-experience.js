@@ -1,9 +1,9 @@
 const THREE_MODULE_URL = "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
-const SCENE_HOOK_KEY = Symbol.for("pumperella.playerExperience.sceneHook.v3");
-const SCENE_PENDING_KEY = "pumperellaPlayerExperiencePendingV3";
-const SETTER_BRAND_KEY = "pumperellaPinsetterBrandV3";
-const BALL_BRAND_KEY = "pumperellaBallBrandV3";
-const STYLE_ID = "pumperella-player-experience-style-v3";
+const SCENE_HOOK_KEY = Symbol.for("pumperella.playerExperience.sceneHook.v4");
+const SCENE_PENDING_KEY = "pumperellaPlayerExperiencePendingV4";
+const SETTER_BRAND_KEY = "pumperellaPinsetterBrandV4";
+const BALL_BRAND_KEY = "pumperellaBallBrandV4";
+const STYLE_ID = "pumperella-player-experience-style-v4";
 const INLINE_PLAYER_ID = "pumperella-current-player-inline";
 const LEGACY_CARD_ID = "pumperella-current-player";
 const ARCHIVE_STORAGE_KEY = "ninepins.drawArchive.v2";
@@ -593,12 +593,18 @@ function addPinsetterBrand(setter, three) {
   const material = new three.MeshBasicMaterial({
     map: createPinsetterTexture(three),
     transparent: true,
+    alphaTest: 0.02,
+    depthTest: true,
     depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -4,
+    polygonOffsetUnits: -4,
+    toneMapped: false,
   });
   const sign = new three.Mesh(new three.PlaneGeometry(4.18, 0.72), material);
   sign.name = "PumperellaPinsetterLogo";
-  sign.position.set(0, -0.12, 2.176);
-  sign.renderOrder = 8;
+  sign.position.set(0, -0.12, 2.235);
+  sign.renderOrder = 100;
   setter.add(sign);
 
   loadOfficialLogo((image) => {
@@ -693,14 +699,11 @@ function createPinsetterTexture(three, logoImage = null) {
   const textX = textLeft + maxTextWidth / 2;
   const textY = canvas.height / 2 + 2;
 
-  // A restrained outline stays readable at mobile render sizes without the
-  // smeared double-word effect caused by the previous oversized glow.
-  context.shadowColor = "rgba(255,47,156,.38)";
-  context.shadowBlur = 7;
-  context.strokeStyle = "rgba(255,237,246,.95)";
-  context.lineWidth = 5;
+  // Keep the wordmark crisp. The previous glow amplified depth artifacts on
+  // the pinsetter face and made the letters look doubled at mobile scale.
+  context.strokeStyle = "rgba(255,237,246,.96)";
+  context.lineWidth = 3;
   context.strokeText(text, textX, textY);
-  context.shadowBlur = 0;
   context.fillStyle = "#ffffff";
   context.fillText(text, textX, textY);
 
