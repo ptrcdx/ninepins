@@ -9,31 +9,33 @@
   color-scheme:dark;
   font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --bg:#100a0d;
-  --panel:rgba(24,13,19,.72);
-  --panel-border:rgba(255,80,165,.66);
+  --panel:linear-gradient(180deg,rgba(29,13,20,.82),rgba(13,8,12,.80));
+  --panel-strong:linear-gradient(180deg,rgba(24,11,17,.92),rgba(11,7,10,.92));
+  --panel-border:rgba(255,80,165,.72);
   --panel-soft-border:rgba(255,255,255,.11);
   --pink:#ff2f9c;
   --pink-soft:#ff86c5;
   --gold:#f5d7a0;
   --text:#fff7fb;
   --muted:rgba(255,246,251,.75);
-  --shadow:0 0 0 1px rgba(255,120,190,.15),0 10px 28px rgba(0,0,0,.40),0 0 18px rgba(255,37,140,.18);
+  --shadow:0 0 0 1px rgba(255,120,190,.15),0 10px 28px rgba(0,0,0,.40),0 0 22px rgba(255,37,140,.20);
+  --shadow-strong:0 0 0 1px rgba(255,120,190,.16),0 14px 36px rgba(0,0,0,.44),0 0 30px rgba(255,24,137,.28);
 }
 *{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:radial-gradient(circle at 50% 8%,#2a0d18 0%,var(--bg) 34%,#090507 100%)}
-body{color:var(--text)}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:radial-gradient(circle at 50% 8%,#2a0d18 0%,#170b12 34%,#090507 100%)}
+body{color:var(--text);background:radial-gradient(circle at 50% 6%,rgba(255,28,141,.12) 0%,rgba(255,28,141,0) 28%),radial-gradient(circle at 50% 100%,rgba(255,191,116,.10) 0%,rgba(255,191,116,0) 22%),linear-gradient(180deg,#13080d,#080507)}
 #app{position:fixed;inset:0}
 canvas{display:block;width:100%;height:100%;touch-action:none}
 .hud{position:fixed;inset:0;pointer-events:none;padding:max(18px,env(safe-area-inset-top)) 18px max(18px,env(safe-area-inset-bottom));display:flex;flex-direction:column;justify-content:space-between}
 .top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
 .left-stack{display:flex;flex-direction:column;gap:12px}
-.card{background:var(--panel);border:1px solid var(--panel-soft-border);box-shadow:var(--shadow);backdrop-filter:blur(10px);border-radius:18px;padding:12px 16px}
-.brand{display:flex;align-items:center;gap:14px;min-width:min(370px,calc(100vw - 120px));padding:14px 18px;border-color:var(--panel-border);background:linear-gradient(180deg,rgba(34,17,25,.82),rgba(17,9,14,.68))}
+.card{background:var(--panel);border:1px solid var(--panel-soft-border);box-shadow:var(--shadow);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:18px;padding:12px 16px}
+.brand{display:flex;align-items:center;gap:14px;min-width:min(370px,calc(100vw - 120px));padding:14px 18px;border-color:var(--panel-border);background:var(--panel-strong);box-shadow:var(--shadow-strong)}
 .brand-logo{width:74px;height:74px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(255,53,153,.28))}
 .brand-copy{display:flex;flex-direction:column;gap:4px}
 .brand-title{font-weight:900;letter-spacing:.03em;font-size:clamp(18px,2.6vw,28px);line-height:1}
 .version{display:block;font-size:clamp(11px,1.2vw,14px);font-weight:500;opacity:.78;letter-spacing:.28em;text-transform:uppercase;margin-top:2px}
-.dates{min-width:320px;max-width:min(360px,calc(100vw - 36px));padding:14px 16px;border-color:rgba(255,80,165,.45)}
+.dates{min-width:320px;max-width:min(360px,calc(100vw - 36px));padding:14px 16px;border-color:rgba(255,80,165,.58);box-shadow:var(--shadow-strong)}
 .card-heading{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .card-heading small,.status small{display:block;opacity:.86;text-transform:uppercase;letter-spacing:.14em;font-size:12px}
 .icon-badge{width:30px;height:30px;border-radius:10px;display:inline-grid;place-items:center;background:rgba(255,41,148,.16);color:var(--pink-soft);box-shadow:inset 0 0 0 1px rgba(255,71,162,.28)}
@@ -45,10 +47,10 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .dates li strong{font-size:16px;font-weight:800;letter-spacing:.02em;color:#fff}
 .dates li.pending strong{opacity:.45;font-weight:600}
 .dates li.revealed strong{color:var(--gold)}
-.status{text-align:right;min-width:184px;padding:12px 16px;border-color:var(--panel-border);background:linear-gradient(180deg,rgba(34,17,25,.82),rgba(17,9,14,.68))}
+.status{text-align:right;min-width:184px;padding:12px 16px;border-color:var(--panel-border);background:var(--panel-strong);box-shadow:var(--shadow-strong)}
 .status strong{display:block;margin-top:4px;font-size:clamp(20px,2vw,28px);line-height:1.1}
 .bottom{display:flex;justify-content:center;padding-bottom:max(2px,env(safe-area-inset-bottom))}
-.hint{width:min(664px,calc(100vw - 36px));text-align:center;padding:18px 22px;border-color:rgba(255,80,165,.62);background:linear-gradient(180deg,rgba(36,18,27,.86),rgba(20,11,16,.88))}
+.hint{width:min(664px,calc(100vw - 36px));text-align:center;padding:18px 22px;border-color:rgba(255,80,165,.70);background:var(--panel-strong);box-shadow:var(--shadow-strong)}
 .hint strong{display:block;font-size:clamp(22px,2.7vw,36px);font-weight:800;line-height:1.18}
 .hint span{display:block;font-size:clamp(14px,1.35vw,20px);opacity:.88;margin-top:8px;line-height:1.42;color:var(--muted)}
 .meter{height:6px;border-radius:999px;background:rgba(255,255,255,.08);margin-top:12px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
@@ -56,7 +58,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 #next{pointer-events:auto;appearance:none;border:1px solid rgba(255,110,185,.9);background:linear-gradient(180deg,#ff4da7,#d90d72);color:#fff;border-radius:999px;padding:11px 22px;margin-top:14px;font:800 15px system-ui;min-height:44px;cursor:pointer;box-shadow:0 8px 18px rgba(217,13,114,.28)}
 #next[hidden]{display:none}
 #next:focus-visible{outline:3px solid white;outline-offset:3px}
-.result{position:fixed;left:50%;top:max(88px,calc(env(safe-area-inset-top) + 64px));transform:translateX(-50%) translateY(-8px);opacity:0;transition:.22s;min-width:260px;text-align:center;background:rgba(24,13,19,.90);border:1px solid rgba(255,100,180,.38);box-shadow:var(--shadow);border-radius:18px;padding:12px 16px;pointer-events:none;backdrop-filter:blur(10px)}
+.result{position:fixed;left:50%;top:max(88px,calc(env(safe-area-inset-top) + 64px));transform:translateX(-50%) translateY(-8px);opacity:0;transition:.22s;min-width:260px;text-align:center;background:rgba(24,13,19,.90);border:1px solid rgba(255,100,180,.48);box-shadow:var(--shadow-strong);border-radius:18px;padding:12px 16px;pointer-events:none;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .result.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .result small{display:block;opacity:.70;text-transform:uppercase;letter-spacing:.12em;font-size:11px}
 .result strong{display:block;margin-top:4px;font-size:24px;line-height:1.1}
@@ -845,7 +847,7 @@ class BowlingApp {
     const T = this.T;
     this.scene = new T.Scene();
     this.scene.background = new T.Color(0x130b10);
-    this.scene.fog = new T.Fog(0x130b10, 19, 39);
+    this.scene.fog = new T.Fog(0x130b10, 18, 40);
     this.camera = new T.PerspectiveCamera(55, 1, 0.1, 80);
     this.renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     this.renderer.domElement.tabIndex = 0;
@@ -856,10 +858,10 @@ class BowlingApp {
     this.renderer.shadowMap.type = T.PCFShadowMap;
     this.renderer.outputColorSpace = T.SRGBColorSpace;
     this.renderer.toneMapping = T.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.08;
+    this.renderer.toneMappingExposure = innerWidth < 760 ? 1.10 : 1.14;
     // V27: full MSAA on mobile plus moderate supersampling. Physics remains unchanged.
     this.ui.app.appendChild(this.renderer.domElement);
-    this.scene.add(new T.HemisphereLight(0xffead8, 0x241219, 1.72));
+    this.scene.add(new T.HemisphereLight(0xffead8, 0x241219, 1.65));
     const key = new T.DirectionalLight(0xffe6bf, 3.6);
     key.position.set(-4, 10, 3);
     key.target.position.set(0, 0, -7);
@@ -868,23 +870,29 @@ class BowlingApp {
     Object.assign(key.shadow.camera, { left: -8, right: 8, top: 15, bottom: -15, near: 0.5, far: 45 });
     key.shadow.normalBias = 0.012;
     this.scene.add(key, key.target);
-    const rear = new T.PointLight(0xffbd78, 24, 14, 2);
+    const rear = new T.PointLight(0xffbd78, 22, 14, 2);
     rear.position.set(2.8, 3.5, -13.5);
     this.scene.add(rear);
-    const magentaAccent = new T.PointLight(0xff2f9c, 8, 18, 2);
+    const magentaAccent = new T.PointLight(0xff2f9c, 9, 18, 2);
     magentaAccent.position.set(0, 2.8, -11.8);
     this.scene.add(magentaAccent);
+    const crownGlow = new T.PointLight(0xff2f9c, 8, 10, 2);
+    crownGlow.position.set(0, 4.0, -13.9);
+    this.scene.add(crownGlow);
+    const laneFill = new T.PointLight(0xffc58a, 7, 18, 2);
+    laneFill.position.set(0, 2.2, -5.2);
+    this.scene.add(laneFill);
   }
 
   /** Render each physical surface from the same dimensions as its collider. */
   buildEnvironment() {
     const T = this.T;
     const materials = {
-      wood: new T.MeshStandardMaterial({ color: 0xc78449, roughness: 0.40 }),
-      side: new T.MeshStandardMaterial({ color: 0x382027, roughness: 0.74 }),
-      gutter: new T.MeshStandardMaterial({ color: 0x5b5561, roughness: 0.38, metalness: 0.30 }),
-      rubber: new T.MeshStandardMaterial({ color: 0x121314, roughness: 0.95 }),
-      metal: new T.MeshStandardMaterial({ color: 0x686d72, roughness: 0.33, metalness: 0.72 })
+      wood: new T.MeshStandardMaterial({ color: 0xce8a4e, roughness: 0.34, metalness: 0.04 }),
+      side: new T.MeshStandardMaterial({ color: 0x2f1c24, roughness: 0.70 }),
+      gutter: new T.MeshStandardMaterial({ color: 0x6d6570, roughness: 0.28, metalness: 0.42 }),
+      rubber: new T.MeshStandardMaterial({ color: 0x101012, roughness: 0.92 }),
+      metal: new T.MeshStandardMaterial({ color: 0x6c7077, roughness: 0.28, metalness: 0.78 })
     };
     this.materials = materials;
     for (const surface of this.physics.surfaces) {
@@ -894,11 +902,26 @@ class BowlingApp {
       mesh.castShadow = surface.kind === 'metal';
       this.scene.add(mesh);
     }
+    const sideFloorMaterial = new T.MeshStandardMaterial({ color: 0x140d11, roughness: 0.18, metalness: 0.18 });
+    const sideFloorGeometry = new T.BoxGeometry(4.4, 0.08, 26.0);
+    for (const side of [-1, 1]) {
+      const sideFloor = new T.Mesh(sideFloorGeometry, sideFloorMaterial);
+      sideFloor.position.set(side * 5.25, -0.16, -4.6);
+      sideFloor.receiveShadow = true;
+      this.scene.add(sideFloor);
+    }
+    const backWall = new T.Mesh(
+      new T.BoxGeometry(18.0, 8.0, 0.14),
+      new T.MeshStandardMaterial({ color: 0x0d080b, roughness: 0.68, metalness: 0.08 })
+    );
+    backWall.position.set(0, 2.55, -18.55);
+    backWall.receiveShadow = true;
+    this.scene.add(backWall);
     const neonMaterial = new T.MeshStandardMaterial({
       color: 0xff2f9c,
       emissive: 0xff1c8d,
-      emissiveIntensity: 1.45,
-      roughness: 0.26,
+      emissiveIntensity: 1.5,
+      roughness: 0.22,
       metalness: 0.0
     });
     const railGeometry = new T.BoxGeometry(0.05, 0.038, 13.6);
@@ -907,6 +930,15 @@ class BowlingApp {
       rail.position.set(side * 2.30, 0.055, -4.45);
       rail.castShadow = false;
       this.scene.add(rail);
+    }
+    const podGeometry = new T.BoxGeometry(0.18, 0.06, 0.55);
+    const podZ = [1.55, -1.8, -5.15, -8.5, -11.85];
+    for (const side of [-1, 1]) {
+      for (const z of podZ) {
+        const pod = new T.Mesh(podGeometry, neonMaterial);
+        pod.position.set(side * 2.52, 0.045, z);
+        this.scene.add(pod);
+      }
     }
     const jointMaterial = new T.MeshStandardMaterial({ color: 0x7c4728, roughness: 0.7, transparent: true, opacity: 0.20 });
     const jointGeometry = new T.BoxGeometry(0.009, 0.004, 21);
@@ -919,11 +951,29 @@ class BowlingApp {
     // narrow seams are only surface detail; there are no gaps between panels.
     const curtain = new T.Mesh(
       new T.BoxGeometry(5.85, 3.10, 0.12),
-      new T.MeshStandardMaterial({ color: 0x0d0e0f, roughness: 0.99 })
+      new T.MeshStandardMaterial({
+        color: 0x130f14,
+        roughness: 0.95,
+        emissive: 0x2d081b,
+        emissiveIntensity: 0.18
+      })
     );
     curtain.position.set(0, 1.47, -17.10);
     curtain.receiveShadow = true;
     this.scene.add(curtain);
+    const curtainGlowMaterial = new T.MeshStandardMaterial({
+      color: 0xff2f9c,
+      emissive: 0xff2f9c,
+      emissiveIntensity: 1.1,
+      roughness: 0.22,
+      metalness: 0.0
+    });
+    const curtainGlowGeometry = new T.BoxGeometry(0.10, 2.15, 0.05);
+    for (const side of [-1, 1]) {
+      const glowBar = new T.Mesh(curtainGlowGeometry, curtainGlowMaterial);
+      glowBar.position.set(side * 2.48, 1.22, -16.12);
+      this.scene.add(glowBar);
+    }
     const seamMaterial = new T.MeshBasicMaterial({ color: 0x242424, transparent: true, opacity: 0.22 });
     const seamGeometry = new T.BoxGeometry(0.012, 3.00, 0.008);
     for (let x = -2.65; x <= 2.65; x += 0.38) {
@@ -935,6 +985,12 @@ class BowlingApp {
     catcherTop.position.set(0, 3.28, -16.68);
     catcherTop.castShadow = true;
     this.scene.add(catcherTop);
+    const crownMount = new T.Mesh(
+      new T.BoxGeometry(2.2, 0.16, 0.28),
+      new T.MeshStandardMaterial({ color: 0x211317, roughness: 0.60 })
+    );
+    crownMount.position.set(0, 3.02, -15.78);
+    this.scene.add(crownMount);
     for (const side of [-1, 1]) {
       const panel = new T.Mesh(new T.BoxGeometry(0.38, 3.25, 1.65), materials.side);
       panel.position.set(side * 3.02, 1.45, -16.47);
@@ -944,6 +1000,7 @@ class BowlingApp {
     }
     this.buildStandPlates();
     this.buildLogo();
+    this.buildAmbientScenery();
   }
 
   /**
@@ -1002,6 +1059,68 @@ class BowlingApp {
     logo.rotation.x = -Math.PI / 2;
     logo.position.set(0, 0.008, -3.5);
     this.scene.add(logo);
+  }
+
+  /**
+   * Add the surrounding lounge scenery using only standard meshes and
+   * CanvasTexture sprites, avoiding post-processing for mobile browsers.
+   */
+  buildAmbientScenery() {
+    const T = this.T;
+    const poolMaterial = new T.MeshBasicMaterial({
+      color: 0xff2f9c,
+      transparent: true,
+      opacity: 0.13,
+      depthWrite: false
+    });
+    const poolGeometry = new T.PlaneGeometry(2.4, 1.0);
+    const glowPools = [
+      [-4.3, 0.0, -7.0, 2.4, 1.1],
+      [ 4.3, 0.0, -7.0, 2.4, 1.1],
+      [-4.7, 0.0, -2.3, 1.9, 0.9],
+      [ 4.7, 0.0, -2.3, 1.9, 0.9]
+    ];
+    for (const [x, y, z, sx, sy] of glowPools) {
+      const pool = new T.Mesh(poolGeometry, poolMaterial);
+      pool.rotation.x = -Math.PI / 2;
+      pool.scale.set(sx, sy, 1);
+      pool.position.set(x, y - 0.118, z);
+      this.scene.add(pool);
+    }
+
+    const crownCanvas = document.createElement('canvas');
+    crownCanvas.width = 512;
+    crownCanvas.height = 256;
+    const context = crownCanvas.getContext('2d');
+    context.clearRect(0, 0, crownCanvas.width, crownCanvas.height);
+    context.strokeStyle = '#ff4da7';
+    context.lineWidth = 8;
+    context.lineJoin = 'round';
+    context.shadowColor = '#ff2f9c';
+    context.shadowBlur = 24;
+    context.beginPath();
+    context.moveTo(122, 176);
+    context.lineTo(160, 110);
+    context.lineTo(214, 154);
+    context.lineTo(256, 84);
+    context.lineTo(298, 154);
+    context.lineTo(352, 110);
+    context.lineTo(390, 176);
+    context.lineTo(122, 176);
+    context.stroke();
+    for (const [x, y, radius] of [[122,176,9],[160,110,8],[214,154,7],[256,84,9],[298,154,7],[352,110,8],[390,176,9]]) {
+      context.beginPath();
+      context.arc(x, y, radius, 0, Math.PI * 2);
+      context.stroke();
+    }
+    const crownTexture = new T.CanvasTexture(crownCanvas);
+    crownTexture.colorSpace = T.SRGBColorSpace;
+    const crownSign = new T.Mesh(
+      new T.PlaneGeometry(1.45, 0.72),
+      new T.MeshBasicMaterial({ map: crownTexture, transparent: true, depthWrite: false })
+    );
+    crownSign.position.set(0, 3.02, -15.62);
+    this.scene.add(crownSign);
   }
 
   /** Shift the visible foot-relative pin by exactly the same COM as physics. */
@@ -1068,11 +1187,45 @@ class BowlingApp {
   /** Create one visible ball; never substitute a marker for the mesh. */
   buildBall() {
     const T = this.T;
-    const material = new T.MeshStandardMaterial({ color: 0x7b2535, roughness: 0.20, metalness: 0.08 });
+    const material = new T.MeshStandardMaterial({
+      color: 0xb00e54,
+      emissive: 0x49001f,
+      emissiveIntensity: 0.14,
+      roughness: 0.16,
+      metalness: 0.18
+    });
     this.ballMesh = new T.Mesh(new T.SphereGeometry(SETTINGS.ballRadius, 72, 48), material);
     this.ballMesh.castShadow = true;
     this.ballMesh.receiveShadow = true;
     this.scene.add(this.ballMesh);
+
+    const crownCanvas = document.createElement('canvas');
+    crownCanvas.width = 256;
+    crownCanvas.height = 128;
+    const context = crownCanvas.getContext('2d');
+    context.strokeStyle = 'rgba(255,235,245,.92)';
+    context.lineWidth = 5;
+    context.lineJoin = 'round';
+    context.beginPath();
+    context.moveTo(62, 92);
+    context.lineTo(82, 58);
+    context.lineTo(108, 80);
+    context.lineTo(128, 44);
+    context.lineTo(148, 80);
+    context.lineTo(174, 58);
+    context.lineTo(194, 92);
+    context.lineTo(62, 92);
+    context.stroke();
+    const spriteTexture = new T.CanvasTexture(crownCanvas);
+    spriteTexture.colorSpace = T.SRGBColorSpace;
+    const emblem = new T.Sprite(new T.SpriteMaterial({
+      map: spriteTexture,
+      transparent: true,
+      depthWrite: false
+    }));
+    emblem.scale.set(0.42, 0.21, 1);
+    emblem.position.set(0, 0.02, SETTINGS.ballRadius + 0.003);
+    this.ballMesh.add(emblem);
   }
 
   /** A single hood covers the deck before any pin is repositioned. */
@@ -1084,7 +1237,12 @@ class BowlingApp {
     const front = new T.Mesh(new T.BoxGeometry(4.65, 1.60, 0.16), this.materials.rubber);
     front.position.set(0, -0.84, 2.05);
     front.castShadow = true;
-    this.setter.add(top, front);
+    const face = new T.Mesh(
+      new T.BoxGeometry(4.45, 0.70, 0.10),
+      new T.MeshStandardMaterial({ color: 0x181115, roughness: 0.65 })
+    );
+    face.position.set(0, -0.16, 2.12);
+    this.setter.add(top, front, face);
     this.setter.position.set(0, 4.75, PIN_DECK.frontZ - 2 * PIN_DECK.rowStepZ);
     this.scene.add(this.setter);
   }
