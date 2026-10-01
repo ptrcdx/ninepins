@@ -1,8 +1,9 @@
-import { PlayerDrawSession } from "./player-session.js?v=2";
+import { PlayerDrawSession } from "./player-session.js?v=3";
 import { importVerificationKey, verifyDrawToken } from "./token.js?v=3";
 import { installPumperellaVisualTheme } from "./visual-theme.js?v=2";
 import { installPlayerExperience } from "./player-experience.js?v=9";
 
+const PERSISTENCE_CONSENT_KEY = "pumperella.progressPersistenceConsent.v1";
 const LEGACY_IDENTITY_QUERY_KEYS = Object.freeze([
   "player",
   "name",
@@ -27,12 +28,13 @@ export async function createPlayerSession() {
   const verifiedDraw = await verifyDrawToken(token, publicKey);
   const playerSession = new PlayerDrawSession(
     verifiedDraw,
-    resolveProgressStorage(),
+    resolveConsentedProgressStorage(),
   );
 
   removeLegacyIdentityQueryParameters();
   await installPumperellaVisualTheme();
   await installPlayerExperience(playerSession);
+  installProgressPersistenceControl(playerSession);
 
   return playerSession;
 }
@@ -58,26 +60,94 @@ function removeLegacyIdentityQueryParameters() {
 }
 
 /**
- * Uses durable local storage when available and falls back to session storage.
+ * Returns localStorage only when the user has previously opted into persistent
+ * progress. Reading the preference itself is limited to this functional choice.
  *
- * @returns {Storage|null} Browser storage for reload-safe player progress.
+ * @returns {Storage|null}
  */
-function resolveProgressStorage() {
-  for (const storageName of ["localStorage", "sessionStorage"]) {
-    try {
-      const storage = window[storageName];
-      if (
-        storage &&
-        typeof storage.getItem === "function" &&
-        typeof storage.setItem === "function"
-      ) {
-        return storage;
-      }
-    } catch {
-      // Continue with the next storage option when privacy settings deny access.
-    }
+function resolveConsentedProgressStorage() {
+  const storage = getLocalStorage();
+  if (!storage) {
+    return null;
   }
 
+  try {
+    return storage.getItem(PERSISTENCE_CONSENT_KEY) === "granted"
+      ? storage
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Installs the explicit preference for persistent progress.
+ *
+ * @param {PlayerDrawSession} playerSession Authenticated player session.
+ */
+function installProgressPersistenceControl(playerSession) {
+  const checkbox = document.getElementById("persist-progress");
+  const note = document.getElementById("persist-progress-note");
+  if (!(checkbox instanceof HTMLInputElement)) {
+    return;
+  }
+
+  const storage = getLocalStorage();
+  if (!storage) {
+    checkbox.disabled = true;
+    if (note) {
+      note.textContent = "Browserspeicher ist nicht verfügbar.";
+    }
+    return;
+  }
+
+  checkbox.checked = playerSession.isPersistenceEnabled();
+  if (note) {
+    note.textContent = checkbox.checked
+      ? "Fortschritt wird lokal gespeichert."
+      : "Nur nach Zustimmung dauerhaft.";
+  }
+
+  checkbox.addEventListener("change", () => {
+    try {
+      if (checkbox.checked) {
+        storage.setItem(PERSISTENCE_CONSENT_KEY, "granted");
+        playerSession.enablePersistence(storage);
+        if (note) {
+          note.textContent = "Fortschritt wird lokal gespeichert.";
+        }
+        return;
+      }
+
+      playerSession.disablePersistence();
+      storage.removeItem(PERSISTENCE_CONSENT_KEY);
+      if (note) {
+        note.textContent = "Dauerhafte Speicherung ist deaktiviert.";
+      }
+    } catch {
+      checkbox.checked = playerSession.isPersistenceEnabled();
+      if (note) {
+        note.textContent = "Speicherpräferenz konnte nicht geändert werden.";
+      }
+    }
+  });
+}
+
+/** @returns {Storage|null} */
+function getLocalStorage() {
+  try {
+    const storage = window.localStorage;
+    if (
+      storage &&
+      typeof storage.getItem === "function" &&
+      typeof storage.setItem === "function" &&
+      typeof storage.removeItem === "function"
+    ) {
+      return storage;
+    }
+  } catch {
+    // Privacy settings may deny local storage access.
+  }
   return null;
 }
 
