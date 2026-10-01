@@ -60,9 +60,12 @@ The personal game token is stored in the URL fragment. It is signed but not
 encrypted; anyone who receives the complete personal link can technically
 decode the player name and assigned dates.
 
-Player progress stores only the draw identifier and revealed-date count in
-browser storage. Player names and assigned dates are not written to that
-progress storage.
+Persistent player progress is opt-in. Without consent, progress exists only in
+the running page. When the player enables "Fortschritt speichern", the
+application stores only the draw identifier and revealed-date count in
+`localStorage`; player names and assigned dates are not written to that
+progress storage. Revoking the option removes the current draw's stored
+progress and the persistence preference.
 
 ## Security boundary
 
@@ -77,6 +80,11 @@ archive before creating another draw.
 Never commit exported signing keys or draw archives. The repository
 `.gitignore` blocks the expected local filenames as a defense-in-depth
 measure.
+
+The current Git history contains legacy commit metadata with personal author
+email addresses. Before changing repository visibility to public, rewrite that
+history to a GitHub noreply address or explicitly accept that those historical
+addresses will become public.
 
 ## Runtime dependencies
 
