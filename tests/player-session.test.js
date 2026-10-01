@@ -20,6 +20,9 @@ function createMemoryStorage() {
     setItem(key, value) {
       values.set(key, String(value));
     },
+    removeItem(key) {
+      values.delete(key);
+    },
   };
 }
 
@@ -85,6 +88,39 @@ describe("PlayerDrawSession", () => {
 
     await expect(session.drawDate()).resolves.toBe("25.10.2026");
     expect(session.getPlayerName()).toBe("Claudia Beispiel");
+  });
+
+  it("does not persist progress before explicit opt-in", async () => {
+    const storage = createMemoryStorage();
+    const firstSession = new PlayerDrawSession(VERIFIED_DRAW);
+    await firstSession.drawDate();
+
+    const reloadedSession = new PlayerDrawSession(VERIFIED_DRAW, storage);
+    expect(reloadedSession.getRevealedCount()).toBe(0);
+  });
+
+  it("can enable persistence after explicit opt-in", async () => {
+    const storage = createMemoryStorage();
+    const session = new PlayerDrawSession(VERIFIED_DRAW);
+    await session.drawDate();
+
+    expect(session.isPersistenceEnabled()).toBe(false);
+    session.enablePersistence(storage);
+    expect(session.isPersistenceEnabled()).toBe(true);
+
+    const reloadedSession = new PlayerDrawSession(VERIFIED_DRAW, storage);
+    expect(reloadedSession.getRevealedCount()).toBe(1);
+  });
+
+  it("removes stored progress when persistence is revoked", async () => {
+    const storage = createMemoryStorage();
+    const session = new PlayerDrawSession(VERIFIED_DRAW, storage);
+    await session.drawDate();
+    session.disablePersistence();
+
+    expect(session.isPersistenceEnabled()).toBe(false);
+    const reloadedSession = new PlayerDrawSession(VERIFIED_DRAW, storage);
+    expect(reloadedSession.getRevealedCount()).toBe(0);
   });
 
   it("restores revealed dates for the same draw", async () => {
