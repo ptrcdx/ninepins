@@ -9,7 +9,7 @@ const MAX_PLAYER_NAME_LENGTH = 80;
 
 /**
  * Holds the verified, immutable player assignment and reveals dates
- * sequentially. Progress is persisted by drawId when browser storage exists.
+ * sequentially. Progress is persisted only after explicit opt-in.
  */
 export class PlayerDrawSession {
   /**
@@ -31,6 +31,37 @@ export class PlayerDrawSession {
   /** @returns {string|null} Authenticated player name or null for legacy links. */
   getPlayerName() {
     return this.playerName;
+  }
+
+  /** @returns {boolean} Whether persistent progress storage is enabled. */
+  isPersistenceEnabled() {
+    return this.storage !== null;
+  }
+
+  /**
+   * Enables persistent progress after an explicit user choice.
+   *
+   * @param {{getItem:(key:string)=>string|null,setItem:(key:string,value:string)=>void,removeItem?:(key:string)=>void}} storage Persistent storage adapter.
+   * @returns {number} Current revealed count after synchronization.
+   */
+  enablePersistence(storage) {
+    validateStorage(storage);
+    this.storage = storage;
+    this.synchronizeFromStorage();
+    this.persistCount(this.revealedCount);
+    return this.revealedCount;
+  }
+
+  /** Disables persistence and removes stored progress for this draw. */
+  disablePersistence() {
+    if (this.storage && typeof this.storage.removeItem === "function") {
+      try {
+        this.storage.removeItem(this.storageKey);
+      } catch {
+        // Storage cleanup may be blocked; persistence is still disabled below.
+      }
+    }
+    this.storage = null;
   }
 
   /** @returns {boolean} Whether another successful throw can reveal a date. */
