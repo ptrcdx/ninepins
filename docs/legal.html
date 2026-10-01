@@ -9,12 +9,13 @@
   <style>
     :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; }
     body { margin: 0; background: #14090d; color: #f6eef2; }
-    main { width: min(760px, calc(100% - 32px)); margin: 40px auto 80px; line-height: 1.55; }
+    main { width: min(780px, calc(100% - 32px)); margin: 40px auto 80px; line-height: 1.55; }
     h1, h2 { line-height: 1.15; }
     h2 { margin-top: 2rem; }
     a { color: #ff8fc7; }
     code { background: #28151e; padding: .1em .35em; border-radius: .35em; }
     .muted { color: #c7b9c0; }
+    .notice { border: 1px solid #6f4458; background: #21121a; border-radius: 12px; padding: 12px 14px; }
   </style>
 </head>
 <body>
@@ -22,10 +23,22 @@
   <h1>Datenschutz und technische Hinweise</h1>
   <p class="muted">Stand: 1. Oktober 2026</p>
 
-  <h2>Private Nutzung</h2>
+  <h2>Verantwortliche Stelle</h2>
+  <p><strong>Noch nicht festgelegt.</strong></p>
+  <p class="notice">
+    Dies ist eine vorläufige Angabe. Für eine Nutzung, bei der die
+    Datenschutz-Grundverordnung anwendbar ist, muss vor einer entsprechenden
+    Veröffentlichung eine tatsächlich verantwortliche Person oder Stelle mit
+    geeigneten Kontaktdaten benannt werden.
+  </p>
+
+  <h2>Zweck des Angebots</h2>
   <p>
-    Pumperella ist ein kleines, nichtkommerzielles Kegelspiel. Es enthält keine
-    Werbung, keine Webanalyse und kein Nutzertracking.
+    Pumperella ist ein kleines, nichtkommerzielles Kegelspiel für einen
+    begrenzten Personenkreis. Es enthält keine Werbung, keine Webanalyse und
+    kein Nutzertracking. Personenbezogene Angaben im persönlichen Spielcode
+    werden ausschließlich verwendet, um die zugewiesenen Termine im Browser
+    anzuzeigen und die Integrität des Spielcodes zu prüfen.
   </p>
 
   <h2>Hosting über GitHub Pages</h2>
@@ -33,28 +46,51 @@
     Die statische Website wird über GitHub Pages bereitgestellt. GitHub
     dokumentiert, dass beim Besuch einer GitHub-Pages-Seite die IP-Adresse des
     Besuchers zu Sicherheitszwecken protokolliert und gespeichert wird.
-    Weitere Informationen stehen in der
+    GitHub kann Daten nach Maßgabe der eigenen Datenschutzinformationen auch
+    außerhalb des Europäischen Wirtschaftsraums verarbeiten.
+  </p>
+  <p>
+    Empfänger der für Hosting und Auslieferung technisch erforderlichen Daten
+    ist GitHub als Hostinganbieter. Maßgeblich sind die
     <a href="https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages">GitHub-Pages-Dokumentation</a>
-    und der dort verlinkten GitHub-Datenschutzerklärung.
+    und das
+    <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub General Privacy Statement</a>.
+  </p>
+
+  <h2>Rechtsgrundlagen</h2>
+  <p>
+    Soweit die DSGVO anwendbar ist, wird der Betrieb und die technische
+    Absicherung des nichtkommerziellen Angebots auf das berechtigte Interesse
+    an der Bereitstellung und sicheren Auslieferung des Spiels gestützt
+    (Art. 6 Abs. 1 lit. f DSGVO). Die dauerhafte Speicherung des
+    Spielfortschritts auf dem Endgerät erfolgt nur nach einer ausdrücklichen
+    Auswahl durch die spielende Person. Diese Auswahl kann jederzeit im Spiel
+    widerrufen werden.
   </p>
 
   <h2>Keine externen Runtime-CDNs</h2>
   <p>
     Die für das Spiel benötigten JavaScript-Bibliotheken werden direkt von
     dieser Website ausgeliefert. Beim normalen Spielstart werden dafür keine
-    Ressourcen von jsDelivr, Google Fonts oder vergleichbaren Drittanbieter-CDNs
-    geladen.
+    Ressourcen von jsDelivr, Google Fonts oder vergleichbaren
+    Drittanbieter-CDNs geladen.
   </p>
 
   <h2>Lokaler Spielfortschritt</h2>
   <p>
-    Das Spiel speichert auf dem verwendeten Gerät ausschließlich die
-    Ziehungs-ID und die Anzahl bereits aufgedeckter Termine in
-    <code>localStorage</code> bzw. ersatzweise <code>sessionStorage</code>.
-    Diese Daten dienen nur dazu, den Spielfortschritt nach einem Neuladen
-    wiederherzustellen. Der Spielername und die Termine werden dort nicht
-    gespeichert. Ist Browser-Speicher deaktiviert, bleibt das Spiel nutzbar,
-    der Fortschritt kann nach einem Neuladen jedoch verloren gehen.
+    Ohne Zustimmung wird kein Spielfortschritt dauerhaft im Browser
+    gespeichert. Wird im Spiel die Option <em>„Fortschritt speichern“</em>
+    aktiviert, speichert die Anwendung in <code>localStorage</code> die
+    Ziehungs-ID und die Anzahl bereits aufgedeckter Termine. Zusätzlich wird
+    eine technische Präferenz gespeichert, damit die Auswahl bei einem
+    erneuten Aufruf berücksichtigt werden kann.
+  </p>
+  <p>
+    Spielername und Termine werden nicht als Fortschrittsdaten in
+    <code>localStorage</code> gespeichert. Wird die Option deaktiviert, entfernt
+    die Anwendung den gespeicherten Fortschritt der aktuellen Ziehung und die
+    Zustimmungsmarkierung. Browserdaten können zusätzlich jederzeit über die
+    Browsereinstellungen gelöscht werden.
   </p>
 
   <h2>Persönlicher Spiellink</h2>
@@ -69,6 +105,31 @@
   <p>
     URL-Fragmente werden bei üblichen HTTP-Anfragen nicht als Bestandteil der
     Request-URL an den Webserver übertragen.
+  </p>
+
+  <h2>Speicherdauer</h2>
+  <p>
+    Lokal gespeicherter Spielfortschritt bleibt bis zum Widerruf der
+    Speicheroption, bis zur Löschung der Browserdaten oder bis zur manuellen
+    Entfernung durch den Browser erhalten. Für Server- und Sicherheitsprotokolle
+    von GitHub gelten die von GitHub festgelegten Aufbewahrungsfristen; diese
+    werden von Pumperella nicht gesteuert.
+  </p>
+
+  <h2>Betroffenenrechte</h2>
+  <p>
+    Soweit die DSGVO anwendbar ist, bestehen nach den gesetzlichen
+    Voraussetzungen insbesondere Rechte auf Auskunft, Berichtigung, Löschung,
+    Einschränkung der Verarbeitung und Widerspruch. Eine erteilte Einwilligung
+    kann für die Zukunft widerrufen werden. Außerdem besteht das Recht, sich
+    bei einer zuständigen Datenschutzaufsichtsbehörde zu beschweren.
+  </p>
+
+  <h2>Automatisierte Entscheidungen</h2>
+  <p>
+    Es findet keine automatisierte Entscheidungsfindung im Sinne von
+    Art. 22 DSGVO statt. Die zufällige Terminziehung ist eine Spielfunktion und
+    dient keiner Bewertung oder Profilbildung.
   </p>
 
   <h2>Software und Lizenzen</h2>
