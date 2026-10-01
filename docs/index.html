@@ -50,7 +50,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .dates li.revealed strong{color:var(--gold)}
 .status{text-align:right;min-width:184px;padding:12px 16px;border-color:var(--panel-border);background:var(--panel-strong);box-shadow:var(--shadow-strong)}
 .status strong{display:block;margin-top:4px;font-size:clamp(20px,2vw,28px);line-height:1.1}
-.legal-link{display:inline-block;margin-top:7px;color:rgba(255,238,246,.72);font-size:10px;text-decoration:none}.legal-link:hover,.legal-link:focus-visible{color:#fff;text-decoration:underline}
+.legal-link{pointer-events:auto;display:inline-block;margin-top:7px;color:rgba(255,238,246,.72);font-size:10px;text-decoration:none}.legal-link:hover,.legal-link:focus-visible{color:#fff;text-decoration:underline}\n.persistence-choice{pointer-events:auto;display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:8px;color:rgba(255,238,246,.84);font-size:10px;line-height:1.2;cursor:pointer}.persistence-choice input{width:14px;height:14px;margin:0;accent-color:var(--pink)}.persistence-note{margin-top:4px;color:rgba(255,238,246,.58);font-size:9px;line-height:1.25;max-width:180px;margin-left:auto}
 .bottom{display:flex;justify-content:center;padding-bottom:max(2px,env(safe-area-inset-bottom))}
 .hint{width:min(664px,calc(100vw - 36px));text-align:center;padding:18px 22px;border-color:rgba(255,80,165,.70);background:var(--panel-strong);box-shadow:var(--shadow-strong)}
 .hint strong{display:block;font-size:clamp(22px,2.7vw,36px);font-weight:800;line-height:1.18}
@@ -121,7 +121,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
         </ol>
       </div>
     </div>
-    <div class="card status"><small>Status</small><strong id="status">Link wird geprüft ...</strong><a class="legal-link" href="./legal.html">Datenschutz &amp; Hinweise</a></div>
+    <div class="card status"><small>Status</small><strong id="status">Link wird geprüft ...</strong><a class="legal-link" href="./legal.html">Datenschutz &amp; Hinweise</a><label class="persistence-choice" for="persist-progress"><input id="persist-progress" type="checkbox"><span>Fortschritt speichern</span></label><div id="persist-progress-note" class="persistence-note">Nur nach Zustimmung dauerhaft.</div></div>
   </div>
   <div class="bottom"><div class="card hint"><strong id="hintTitle">Persönlichen Link prüfen</strong><span id="hintText">Nach erfolgreicher Prüfung liegt die Kugel vorne bereit.</span><div class="meter"><i id="power"></i></div><button id="next" type="button" hidden>Nächster Wurf</button></div></div>
 </div>
