@@ -1,0 +1,22 @@
+node_modules/
+coverage/
+dist/
+.env
+.env.*
+!.env.example
+
+# Local signing material - never commit.
+ninepins-private-signing-key*.json
+*private-signing-key*.json
+*.pem
+*.key
+
+# Draw archives can contain player names, dates and personal links.
+ninepins-draw-archive*.json
+ninepins-draw-archive*.csv
+
+# OS/editor noise.
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

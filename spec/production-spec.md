@@ -68,7 +68,7 @@ Token-Version 1 ohne Spielernamen und Token-Version 2 mit Namen enthalten jeweil
 
 ### 4.3 Browser-Verifikation
 
-Die Spieler-App lädt ausschließlich den öffentlichen Verifikationsschlüssel. Native Web Crypto wird bevorzugt. Ist `SubtleCrypto` nicht oder nur unvollständig verfügbar, wird die Signatur mit einer versionsfesten JavaScript-P-256-Implementierung verifiziert. Scheitern beide Wege, darf das Spiel nicht starten.
+Die Spieler-App lädt ausschließlich den öffentlichen Verifikationsschlüssel. Die Signaturprüfung erfolgt über die standardsbasierte Web Crypto API. Ist `SubtleCrypto` nicht verfügbar oder unvollständig, darf das Spiel nicht starten; es wird keine externe Kryptografie-Bibliothek nachgeladen.
 
 Der Token ist keine Verschlüsselung. Die Signatur schützt Authentizität und Integrität, nicht Vertraulichkeit.
 
@@ -129,9 +129,10 @@ Die produktive Fassung verwendet Cannon-es mit fester Simulationsrate von 60 Hz,
 
 Versionsfeste Laufzeitabhängigkeiten:
 
-- Three.js `0.180.0`,
-- cannon-es `0.20.0`,
-- `@noble/curves` `2.3.0` ausschließlich als ECDSA-Fallback.
+- Three.js `0.180.0`, lokal unter `docs/vendor/three/`,
+- cannon-es `0.20.0`, lokal unter `docs/vendor/cannon-es/`.
+
+Die Spieler-App lädt keine Runtime-JavaScript-Bibliotheken von Drittanbieter-CDNs.
 
 ## 10. Qualitätssicherung
 
@@ -143,7 +144,7 @@ Automatisiert getestet werden mindestens:
 - Token-Version 3 mit Spielername und zwei Terminen,
 - Rückwärtskompatibilität zu Token-Version 1 und 2 mit drei Terminen,
 - Signaturprüfung und Manipulationsschutz,
-- native Web-Crypto-Verifikation und Fallback-Pfad,
+- native Web-Crypto-Verifikation und definiertes Abbruchverhalten bei fehlendem Web Crypto,
 - Fortschrittswiederherstellung und genau zwei Terminfreigaben ohne dritten Termin.
 
 Die WebGL-Oberfläche benötigt zusätzlich einen manuellen Browser-Smoke-Test auf aktuellem Chromium sowie Safari auf iOS oder einem vergleichbaren mobilen Browser.

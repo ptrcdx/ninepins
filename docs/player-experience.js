@@ -1,4 +1,4 @@
-const THREE_MODULE_URL = "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+const THREE_MODULE_URL = "./vendor/three/three.module.js";
 const SCENE_HOOK_KEY = Symbol.for("pumperella.playerExperience.sceneHook.v9");
 const SCENE_PENDING_KEY = "pumperellaPlayerExperiencePendingV9";
 const SETTER_BRAND_KEY = "pumperellaPinsetterBrandV9";

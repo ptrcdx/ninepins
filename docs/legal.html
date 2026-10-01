@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="no-referrer">
+  <title>Pumperella - Datenschutz und Hinweise</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; }
+    body { margin: 0; background: #14090d; color: #f6eef2; }
+    main { width: min(760px, calc(100% - 32px)); margin: 40px auto 80px; line-height: 1.55; }
+    h1, h2 { line-height: 1.15; }
+    h2 { margin-top: 2rem; }
+    a { color: #ff8fc7; }
+    code { background: #28151e; padding: .1em .35em; border-radius: .35em; }
+    .muted { color: #c7b9c0; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Datenschutz und technische Hinweise</h1>
+  <p class="muted">Stand: 1. Oktober 2026</p>
+
+  <h2>Private Nutzung</h2>
+  <p>
+    Pumperella ist ein kleines, nichtkommerzielles Kegelspiel. Es enthält keine
+    Werbung, keine Webanalyse und kein Nutzertracking.
+  </p>
+
+  <h2>Hosting über GitHub Pages</h2>
+  <p>
+    Die statische Website wird über GitHub Pages bereitgestellt. GitHub
+    dokumentiert, dass beim Besuch einer GitHub-Pages-Seite die IP-Adresse des
+    Besuchers zu Sicherheitszwecken protokolliert und gespeichert wird.
+    Weitere Informationen stehen in der
+    <a href="https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages">GitHub-Pages-Dokumentation</a>
+    und der dort verlinkten GitHub-Datenschutzerklärung.
+  </p>
+
+  <h2>Keine externen Runtime-CDNs</h2>
+  <p>
+    Die für das Spiel benötigten JavaScript-Bibliotheken werden direkt von
+    dieser Website ausgeliefert. Beim normalen Spielstart werden dafür keine
+    Ressourcen von jsDelivr, Google Fonts oder vergleichbaren Drittanbieter-CDNs
+    geladen.
+  </p>
+
+  <h2>Lokaler Spielfortschritt</h2>
+  <p>
+    Das Spiel speichert auf dem verwendeten Gerät ausschließlich die
+    Ziehungs-ID und die Anzahl bereits aufgedeckter Termine in
+    <code>localStorage</code> bzw. ersatzweise <code>sessionStorage</code>.
+    Diese Daten dienen nur dazu, den Spielfortschritt nach einem Neuladen
+    wiederherzustellen. Der Spielername und die Termine werden dort nicht
+    gespeichert. Ist Browser-Speicher deaktiviert, bleibt das Spiel nutzbar,
+    der Fortschritt kann nach einem Neuladen jedoch verloren gehen.
+  </p>
+
+  <h2>Persönlicher Spiellink</h2>
+  <p>
+    Der persönliche Spiellink enthält im URL-Fragment nach dem
+    <code>#</code>-Zeichen einen digital signierten Spielcode mit
+    Ziehungs-ID, Spielername und Terminen. Dieser Code ist signiert, aber nicht
+    verschlüsselt. Personen, die den vollständigen Link erhalten, können die
+    enthaltenen Angaben technisch auslesen. Der Link sollte deshalb nur an die
+    vorgesehene Person weitergegeben werden.
+  </p>
+  <p>
+    URL-Fragmente werden bei üblichen HTTP-Anfragen nicht als Bestandteil der
+    Request-URL an den Webserver übertragen.
+  </p>
+
+  <h2>Software und Lizenzen</h2>
+  <p>
+    Der projektspezifische Quellcode ist öffentlich einsehbar, aber nicht unter
+    einer Open-Source-Lizenz freigegeben. Drittanbieter-Komponenten bleiben
+    unter ihren jeweiligen MIT-Lizenzen. Die vollständigen Runtime-Lizenztexte
+    liegen unter
+    <a href="./vendor/three/LICENSE">Three.js</a> und
+    <a href="./vendor/cannon-es/LICENSE">cannon-es</a>.
+  </p>
+
+  <p><a href="./">Zurück zum Spiel</a></p>
+</main>
+</body>
+</html>

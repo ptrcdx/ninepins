@@ -9,12 +9,8 @@ const PLAYER_NAME_LENGTH_BYTE_LENGTH = 1;
 const MILLISECONDS_PER_DAY = 86_400_000;
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/u;
 const VERIFICATION_KEY_TYPE = "PUMPERELLA_P256_JWK";
-const COMPACT_P256_SIGNATURE_LENGTH = 64;
-const NOBLE_P256_MODULE_URL =
-  "https://cdn.jsdelivr.net/npm/@noble/curves@2.3.0/nist.js/+esm";
 const TEXT_DECODER = new TextDecoder("utf-8", { fatal: true });
 
-let fallbackVerifierPromise = null;
 
 /**
  * Imports a public key when native Web Crypto is usable and always retains the
@@ -97,9 +93,12 @@ export async function verifyDrawToken(token, verificationKey, options = {}) {
   }
 
   if (!nativeVerificationCompleted) {
-    const fallbackVerifier =
-      options.fallbackVerifier ?? await loadFallbackVerifier();
-    valid = await fallbackVerifier(
+    if (typeof options.fallbackVerifier !== "function") {
+      throw new Error(
+        "Dieser Browser stellt keine sichere ECDSA-Verifikation über Web Crypto bereit. Bitte die HTTPS-Version in einem aktuellen Browser öffnen.",
+      );
+    }
+    valid = await options.fallbackVerifier(
       payload,
       signature,
       verificationKey.jwk,
@@ -233,45 +232,6 @@ function resolveSubtleCrypto(options) {
     null;
 }
 
-/**
- * Loads the pinned audited P-256 implementation only when native Web Crypto is
- * unavailable or incomplete.
- *
- * @returns {Promise<(payload:Uint8Array,signature:Uint8Array,jwk:JsonWebKey)=>boolean>}
- */
-async function loadFallbackVerifier() {
-  if (!fallbackVerifierPromise) {
-    fallbackVerifierPromise = import(NOBLE_P256_MODULE_URL)
-      .then(({ p256 }) => {
-        if (!p256?.verify) {
-          throw new Error("P-256 fallback module is incomplete.");
-        }
-
-        return (payload, signature, jwk) => {
-          const publicKey = jwkToUncompressedPublicKey(jwk);
-          const format =
-            signature.byteLength === COMPACT_P256_SIGNATURE_LENGTH
-              ? "compact"
-              : "der";
-          return p256.verify(signature, payload, publicKey, {
-            format,
-            prehash: true,
-            lowS: false,
-          });
-        };
-      })
-      .catch((error) => {
-        fallbackVerifierPromise = null;
-        throw new Error(
-          "Dieser Browser stellt keine sichere ECDSA-Verifikation bereit. Bitte die HTTPS-Version in einem aktuellen Browser öffnen.",
-          { cause: error },
-        );
-      });
-  }
-
-  return fallbackVerifierPromise;
-}
-
 /** @param {JsonWebKey} jwk @returns {JsonWebKey} */
 function normalizePublicKeyJwk(jwk) {
   if (
@@ -302,17 +262,6 @@ function normalizePublicKeyJwk(jwk) {
     ext: true,
     key_ops: ["verify"],
   });
-}
-
-/** @param {JsonWebKey} jwk @returns {Uint8Array} */
-function jwkToUncompressedPublicKey(jwk) {
-  const x = base64UrlToBytes(jwk.x);
-  const y = base64UrlToBytes(jwk.y);
-  const publicKey = new Uint8Array(1 + x.byteLength + y.byteLength);
-  publicKey[0] = 0x04;
-  publicKey.set(x, 1);
-  publicKey.set(y, 1 + x.byteLength);
-  return publicKey;
 }
 
 /** @param {string} value @returns {Uint8Array} */

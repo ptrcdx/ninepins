@@ -1,4 +1,4 @@
-const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+const THREE_URL = "./vendor/three/three.module.js";
 const SCENE_HOOK = Symbol.for("pumperella.sceneHook.v2");
 const CAMERA_HOOK = Symbol.for("pumperella.cameraHook.v2");
 const RENDERER_KEY = Symbol.for("pumperella.rendererTheme.v2");

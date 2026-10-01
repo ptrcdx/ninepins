@@ -1,0 +1,36 @@
+PUMPERELLA SOURCE-AVAILABLE PROPRIETARY NOTICE
+
+Copyright (c) 2026 the Pumperella project contributors.
+All rights reserved, to the extent such rights subsist.
+
+This repository is published so that its source code can be inspected and so
+that the hosted Pumperella game can be operated. It is not an open-source
+project and no open-source license is granted for the project-specific source
+code or assets.
+
+Except for third-party components identified in THIRD_PARTY_NOTICES.md, no
+additional permission is granted to copy, modify, distribute, sublicense, sell,
+relicense, commercially exploit, or host modified versions of the
+project-specific source code or assets.
+
+This notice does not restrict rights that:
+- are necessarily granted through GitHub's Terms of Service for content hosted
+  in a public repository, including viewing and forking through GitHub's
+  functionality;
+- are granted by the separate licenses of third-party components; or
+- cannot be restricted under applicable law.
+
+The Pumperella name and logo are original club-created project branding. This
+repository does not assert that they are registered trademarks or registered
+designs.
+
+THIRD-PARTY SOFTWARE
+
+Third-party software remains governed exclusively by its own license terms.
+See THIRD_PARTY_NOTICES.md and the license files stored alongside vendored
+runtime dependencies.
+
+NO WARRANTY
+
+To the extent permitted by applicable law, the project is provided without any
+warranty. Use is at your own risk.

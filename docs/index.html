@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
 <title>Pumperella Kegelspiel</title>
 <style>
 :root{
@@ -49,6 +50,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .dates li.revealed strong{color:var(--gold)}
 .status{text-align:right;min-width:184px;padding:12px 16px;border-color:var(--panel-border);background:var(--panel-strong);box-shadow:var(--shadow-strong)}
 .status strong{display:block;margin-top:4px;font-size:clamp(20px,2vw,28px);line-height:1.1}
+.legal-link{display:inline-block;margin-top:7px;color:rgba(255,238,246,.72);font-size:10px;text-decoration:none}.legal-link:hover,.legal-link:focus-visible{color:#fff;text-decoration:underline}
 .bottom{display:flex;justify-content:center;padding-bottom:max(2px,env(safe-area-inset-bottom))}
 .hint{width:min(664px,calc(100vw - 36px));text-align:center;padding:18px 22px;border-color:rgba(255,80,165,.70);background:var(--panel-strong);box-shadow:var(--shadow-strong)}
 .hint strong{display:block;font-size:clamp(22px,2.7vw,36px);font-weight:800;line-height:1.18}
@@ -119,7 +121,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
         </ol>
       </div>
     </div>
-    <div class="card status"><small>Status</small><strong id="status">Link wird geprüft ...</strong></div>
+    <div class="card status"><small>Status</small><strong id="status">Link wird geprüft ...</strong><a class="legal-link" href="./legal.html">Datenschutz &amp; Hinweise</a></div>
   </div>
   <div class="bottom"><div class="card hint"><strong id="hintTitle">Persönlichen Link prüfen</strong><span id="hintText">Nach erfolgreicher Prüfung liegt die Kugel vorne bereit.</span><div class="meter"><i id="power"></i></div><button id="next" type="button" hidden>Nächster Wurf</button></div></div>
 </div>
@@ -1739,8 +1741,8 @@ async function boot() {
     const playerSession = await createPlayerSession();
     document.getElementById('status').textContent = 'Lade 3D-Bahn';
     const [three, cannon] = await Promise.all([
-      import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js'),
-      import('https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js'),
+      import('./vendor/three/three.module.js'),
+      import('./vendor/cannon-es/cannon-es.js'),
     ]);
     new BowlingApp(three, cannon, playerSession);
   } catch (error) {
