@@ -84,7 +84,7 @@ Der Token ist keine Verschlüsselung. Die Signatur schützt Authentizität und I
 8. Erst „Nächster Wurf“ startet das Stellwerk.
 9. Nach dem zweiten erfolgreichen Wurf endet die Datumsziehung. Beide Termine bleiben sichtbar; anschließend ist freies Spiel möglich.
 
-Der Fortschritt wird pro `drawId` lokal gespeichert. Historische Dreier-Links wechseln entsprechend bei 3/3 in den freien Spielmodus.
+Der Fortschritt wird standardmäßig nur im laufenden Seitenzustand gehalten. Eine dauerhafte Speicherung pro `drawId` in `localStorage` erfolgt erst nach ausdrücklicher Aktivierung der Option „Fortschritt speichern“. Beim Widerruf werden der gespeicherte Fortschritt der aktuellen Ziehung und die Zustimmungsmarkierung entfernt. Historische Dreier-Links wechseln entsprechend bei 3/3 in den freien Spielmodus.
 
 ## 6. 3D-Oberfläche und Branding
 
@@ -145,7 +145,7 @@ Automatisiert getestet werden mindestens:
 - Rückwärtskompatibilität zu Token-Version 1 und 2 mit drei Terminen,
 - Signaturprüfung und Manipulationsschutz,
 - native Web-Crypto-Verifikation und definiertes Abbruchverhalten bei fehlendem Web Crypto,
-- Fortschrittswiederherstellung und genau zwei Terminfreigaben ohne dritten Termin.
+- keine dauerhafte Fortschrittsspeicherung ohne Opt-in, Wiederherstellung nach Opt-in, Widerruf/Löschung und genau zwei Terminfreigaben ohne dritten Termin.
 
 Die WebGL-Oberfläche benötigt zusätzlich einen manuellen Browser-Smoke-Test auf aktuellem Chromium sowie Safari auf iOS oder einem vergleichbaren mobilen Browser.
 
@@ -162,4 +162,4 @@ Die Umsetzung ist fachlich abgenommen, wenn:
 - die mobile Oberfläche Spielername und zwei Termine kompakt ohne Überlagerung zusammenfasst,
 - ungültige oder manipulierte Links nicht spielbar sind,
 - der private Schlüssel nicht im öffentlichen Repository enthalten ist,
-- CI grün ist und der manuelle Browser-Smoke-Test bestanden wurde.
+- dauerhafte Fortschrittsspeicherung nur nach ausdrücklichem Opt-in erfolgt und ein Widerruf die zugehörigen lokalen Daten entfernt,\n- CI grün ist und der manuelle Browser-Smoke-Test bestanden wurde.
