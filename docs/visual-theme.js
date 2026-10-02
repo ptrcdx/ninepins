@@ -14,7 +14,7 @@ export async function installPumperellaVisualTheme() {
 
 /**
  * Installs reliable hooks on prototype methods that Three.js actually uses.
- * @param {typeof import("three")} three Three.js module namespace.
+ * @param {object} three Three.js module namespace.
  * @param {{schedule?:(task:()=>void)=>void,decorate?:(scene:any)=>void,viewport?:()=>{width:number,height:number}}} [options]
  */
 export function installPumperellaVisualThemeHooks(three, options = {}) {
