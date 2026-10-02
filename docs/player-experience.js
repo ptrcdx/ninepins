@@ -203,15 +203,17 @@ function installPlayerHud(playerName, dateCount) {
           padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom)) !important;
         }
 
-        /* One static HUD surface on mobile: brand, player, dates and status
-           share the same panel instead of stacking three separate cards. */
+        /* One shallow HUD surface on mobile. The lower row is arranged
+           horizontally as dates, current player and status to preserve the
+           complete information set while keeping the alley visible. */
         body.pumperella-two-date-draw .top {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) 112px;
+          grid-template-columns: minmax(0, 1fr) minmax(70px, .52fr) minmax(92px, .68fr);
+          grid-template-rows: auto auto;
           align-items: stretch;
-          gap: 0 12px;
+          gap: 0 10px;
           width: 100%;
-          padding: 10px 12px 12px;
+          padding: 8px 10px 9px;
           overflow: hidden;
           border: 1px solid rgba(255,80,165,.72);
           border-radius: 18px;
@@ -242,95 +244,112 @@ function installPlayerHud(playerName, dateCount) {
         body.pumperella-two-date-draw .brand {
           display: flex;
           grid-column: 1 / -1;
+          grid-row: 1;
           align-items: center;
           width: 100%;
-          min-height: 52px;
-          padding: 0 0 10px;
-          gap: 10px;
+          min-height: 42px;
+          padding: 0 0 7px;
+          gap: 8px;
           border-bottom: 1px solid rgba(255,255,255,.10);
         }
 
         body.pumperella-two-date-draw .brand-logo {
-          width: 44px;
-          height: 44px;
-          flex: 0 0 44px;
+          width: 36px;
+          height: 36px;
+          flex: 0 0 36px;
         }
 
         body.pumperella-two-date-draw .brand-copy {
-          gap: 2px;
+          gap: 1px;
           min-width: 0;
         }
 
         body.pumperella-two-date-draw .brand-title {
-          font-size: 19px;
+          font-size: 17px;
           line-height: 1;
         }
 
         body.pumperella-two-date-draw .version {
-          font-size: 9px;
-          letter-spacing: .16em;
+          font-size: 8px;
+          letter-spacing: .15em;
         }
 
         body.pumperella-two-date-draw .dates {
-          grid-column: 1;
+          display: grid;
+          grid-column: 1 / 3;
+          grid-row: 2;
+          grid-template-columns: minmax(0, 1fr) minmax(70px, .52fr);
+          grid-template-rows: auto auto;
+          column-gap: 10px;
+          row-gap: 7px;
           width: 100%;
-          padding: 10px 0 0;
+          padding: 8px 0 0;
         }
 
         body.pumperella-two-date-draw .dates .card-heading {
-          gap: 7px;
-          margin-bottom: 7px;
+          grid-column: 1;
+          grid-row: 1;
+          gap: 6px;
+          margin: 0;
         }
 
         body.pumperella-two-date-draw .dates .icon-badge {
-          width: 25px;
-          height: 25px;
-          border-radius: 8px;
+          width: 23px;
+          height: 23px;
+          border-radius: 7px;
         }
 
         body.pumperella-two-date-draw .dates .icon-badge svg {
-          width: 15px;
-          height: 15px;
+          width: 14px;
+          height: 14px;
         }
 
         body.pumperella-two-date-draw .dates .card-heading small {
-          font-size: 10px;
-          letter-spacing: .11em;
+          font-size: 9px;
+          letter-spacing: .10em;
         }
 
         body.pumperella-two-date-draw .dates .pumperella-player-inline {
           display: flex;
-          align-items: baseline;
-          margin: 0 0 7px;
-          padding: 0 0 7px;
+          grid-column: 2;
+          grid-row: 1 / 3;
+          flex-direction: column;
+          align-items: flex-start;
+          justify-content: center;
+          gap: 4px;
+          margin: 0;
+          padding: 0 0 0 10px;
           border: 0;
-          border-bottom: 1px solid rgba(255,255,255,.08);
+          border-left: 1px solid rgba(255,255,255,.10);
           border-radius: 0;
           background: none;
         }
 
         body.pumperella-two-date-draw .dates .pumperella-player-inline small {
-          font-size: 9px;
-          letter-spacing: .10em;
+          font-size: 8.5px;
+          line-height: 1.1;
+          letter-spacing: .09em;
         }
 
         body.pumperella-two-date-draw .dates .pumperella-player-inline strong {
-          max-width: 68%;
+          max-width: 100%;
           margin: 0;
           font-size: 14px;
-          line-height: 1.15;
-          text-align: right;
+          line-height: 1.1;
+          text-align: left;
         }
 
         body.pumperella-two-date-draw .dates ol {
+          grid-column: 1;
+          grid-row: 2;
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 7px;
+          gap: 6px;
         }
 
         body.pumperella-two-date-draw .dates li {
           display: block;
           min-width: 0;
-          padding: 8px 9px;
+          padding: 6px 7px;
           border: 1px solid rgba(255,255,255,.08);
           border-radius: 10px;
           background: rgba(255,255,255,.035);
@@ -343,42 +362,43 @@ function installPlayerHud(playerName, dateCount) {
         body.pumperella-two-date-draw .dates li strong {
           display: block;
           overflow: hidden;
-          font-size: 13px;
+          font-size: 12.5px;
           line-height: 1.2;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
 
         body.pumperella-two-date-draw .status {
-          grid-column: 2;
+          grid-column: 3;
+          grid-row: 2;
           align-self: stretch;
           display: flex;
           flex-direction: column;
           justify-content: center;
-          width: 112px;
-          min-width: 112px;
-          max-width: 112px;
-          margin-top: 10px;
-          padding: 0 0 0 11px;
+          width: auto;
+          min-width: 0;
+          max-width: none;
+          margin-top: 8px;
+          padding: 0 0 0 10px;
           border-left: 1px solid rgba(255,255,255,.10);
           text-align: right;
         }
 
         body.pumperella-two-date-draw .status small {
-          font-size: 9px;
-          letter-spacing: .10em;
+          font-size: 8.5px;
+          letter-spacing: .09em;
         }
 
         body.pumperella-two-date-draw .status strong {
           margin-top: 4px;
-          font-size: 16px;
-          line-height: 1.1;
+          font-size: 15px;
+          line-height: 1.08;
         }
 
         /* Result feedback must never sit on top of the static HUD panel.
            On mobile it becomes lightweight floating text below that panel. */
         body.pumperella-two-date-draw .result {
-          top: max(294px, calc(env(safe-area-inset-top) + 284px));
+          top: max(176px, calc(env(safe-area-inset-top) + 166px));
           min-width: 0;
           max-width: calc(100vw - 32px);
           padding: 7px 12px;
@@ -436,37 +456,49 @@ function installPlayerHud(playerName, dateCount) {
       }
       @media (max-width: 380px) {
         body.pumperella-two-date-draw .top {
-          grid-template-columns: minmax(0, 1fr) 102px;
-          gap: 0 9px;
-          padding: 9px 10px 10px;
+          grid-template-columns: minmax(0, 1fr) minmax(64px, .50fr) minmax(84px, .64fr);
+          gap: 0 8px;
+          padding: 7px 8px 8px;
         }
         body.pumperella-two-date-draw .brand {
-          min-height: 48px;
-          padding-bottom: 9px;
+          min-height: 39px;
+          padding-bottom: 6px;
         }
         body.pumperella-two-date-draw .brand-logo {
-          width: 40px;
-          height: 40px;
-          flex-basis: 40px;
+          width: 33px;
+          height: 33px;
+          flex-basis: 33px;
         }
         body.pumperella-two-date-draw .brand-title {
-          font-size: 17px;
+          font-size: 16px;
         }
-        body.pumperella-two-date-draw .status {
-          width: 102px;
-          min-width: 102px;
-          max-width: 102px;
-          padding-left: 9px;
+        body.pumperella-two-date-draw .dates {
+          grid-template-columns: minmax(0, 1fr) minmax(64px, .50fr);
+          column-gap: 8px;
+          row-gap: 6px;
+          padding-top: 7px;
+        }
+        body.pumperella-two-date-draw .dates .pumperella-player-inline {
+          padding-left: 8px;
         }
         body.pumperella-two-date-draw .dates .pumperella-player-inline strong {
-          max-width: 63%;
-          font-size: 13px;
+          font-size: 12.5px;
+        }
+        body.pumperella-two-date-draw .dates li {
+          padding: 5px 5px;
         }
         body.pumperella-two-date-draw .dates li strong {
-          font-size: 12px;
+          font-size: 11px;
+        }
+        body.pumperella-two-date-draw .status {
+          margin-top: 7px;
+          padding-left: 8px;
+        }
+        body.pumperella-two-date-draw .status strong {
+          font-size: 13.5px;
         }
         body.pumperella-two-date-draw .result {
-          top: max(284px, calc(env(safe-area-inset-top) + 274px));
+          top: max(164px, calc(env(safe-area-inset-top) + 154px));
         }
       }
       @media (max-height: 560px) and (orientation: landscape) {
