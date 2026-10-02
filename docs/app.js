@@ -32,9 +32,14 @@ export async function createPlayerSession() {
   );
 
   removeLegacyIdentityQueryParameters();
+
+  // Initialize the independent persistence preference before the optional 3D
+  // runtime is loaded. A rendering dependency failure must never leave a
+  // visible but non-functional consent control behind.
+  installProgressPersistenceControl(playerSession);
+
   await installPumperellaVisualTheme();
   await installPlayerExperience(playerSession);
-  installProgressPersistenceControl(playerSession);
 
   return playerSession;
 }
