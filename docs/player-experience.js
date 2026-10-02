@@ -315,10 +315,10 @@ function installPlayerHud(playerName, dateCount) {
           grid-row: 1 / 3;
           flex-direction: column;
           align-items: flex-start;
-          justify-content: center;
+          justify-content: flex-start;
           gap: 4px;
           margin: 0;
-          padding: 0 0 0 8px;
+          padding: 6px 0 0 8px;
           border: 0;
           border-left: 1px solid rgba(255,255,255,.10);
           border-radius: 0;
@@ -376,12 +376,12 @@ function installPlayerHud(playerName, dateCount) {
           align-self: stretch;
           display: flex;
           flex-direction: column;
-          justify-content: center;
+          justify-content: flex-start;
           width: auto;
           min-width: 0;
           max-width: none;
           margin-top: 8px;
-          padding: 0 0 0 8px;
+          padding: 6px 0 0 8px;
           border-left: 1px solid rgba(255,255,255,.10);
           text-align: right;
         }
