@@ -370,6 +370,20 @@ function installPlayerHud(playerName, dateCount) {
           white-space: nowrap;
         }
 
+        /* The full desktop placeholder is too wide for the compact mobile
+           chips. Keep the semantic DOM text unchanged and shorten only its
+           visual mobile representation. */
+        body.pumperella-two-date-draw .dates li.pending strong {
+          font-size: 0;
+        }
+
+        body.pumperella-two-date-draw .dates li.pending strong::after {
+          content: "Verdeckt";
+          font-size: clamp(10px, 3.05vw, 12px);
+          letter-spacing: -.015em;
+          line-height: 1.2;
+        }
+
         body.pumperella-two-date-draw .status {
           grid-column: 3;
           grid-row: 2;
@@ -492,7 +506,8 @@ function installPlayerHud(playerName, dateCount) {
         body.pumperella-two-date-draw .dates li {
           padding: 5px 2px;
         }
-        body.pumperella-two-date-draw .dates li strong {
+        body.pumperella-two-date-draw .dates li strong,
+        body.pumperella-two-date-draw .dates li.pending strong::after {
           font-size: clamp(9.5px, 3vw, 10.5px);
           letter-spacing: -.025em;
         }
