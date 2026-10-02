@@ -84,7 +84,7 @@ Der Token ist keine Verschlüsselung. Die Signatur schützt Authentizität und I
 8. Erst „Nächster Wurf“ startet das Stellwerk.
 9. Nach dem zweiten erfolgreichen Wurf endet die Datumsziehung. Beide Termine bleiben sichtbar; anschließend ist freies Spiel möglich.
 
-Der Fortschritt wird standardmäßig nur im laufenden Seitenzustand gehalten. Eine dauerhafte Speicherung pro `drawId` in `localStorage` erfolgt erst nach ausdrücklicher Aktivierung der Option „Fortschritt speichern“. Beim Widerruf werden der gespeicherte Fortschritt der aktuellen Ziehung und die Zustimmungsmarkierung entfernt. Historische Dreier-Links wechseln entsprechend bei 3/3 in den freien Spielmodus.
+Beim ersten gültigen Spielaufruf erscheint ein kurzer Willkommensdialog mit Spielerklärung und der Frage, ob Fortschritt auf diesem Gerät gespeichert werden soll. Die Entscheidung „Speichern“ oder „Nicht speichern“ wird als technische Präferenz in `localStorage` gemerkt, sodass der Dialog bei späteren Aufrufen nicht erneut erscheint. Nur bei „Speichern“ wird der Fortschritt pro `drawId` dauerhaft gespeichert. Die Einstellung kann später über ein dezentes, fest positioniertes `⋮`-Menü geändert werden. Das Deaktivieren stoppt weitere Persistenz, löscht bestehende Fortschrittsdaten aber nicht automatisch; dafür gibt es eine separate bestätigte Löschaktion. Historische Dreier-Links wechseln entsprechend bei 3/3 in den freien Spielmodus.
 
 ## 6. 3D-Oberfläche und Branding
 
@@ -145,7 +145,7 @@ Automatisiert getestet werden mindestens:
 - Rückwärtskompatibilität zu Token-Version 1 und 2 mit drei Terminen,
 - Signaturprüfung und Manipulationsschutz,
 - native Web-Crypto-Verifikation und definiertes Abbruchverhalten bei fehlendem Web Crypto,
-- keine dauerhafte Fortschrittsspeicherung ohne Opt-in, Wiederherstellung nach Opt-in, Widerruf/Löschung und genau zwei Terminfreigaben ohne dritten Termin.
+- keine dauerhafte Fortschrittsspeicherung ohne Opt-in, einmalige Speicherung der Ja/Nein-Präferenz, Wiederherstellung nach Opt-in, spätere Änderung über das `⋮`-Menü, separate explizite Löschung und genau zwei Terminfreigaben ohne dritten Termin.
 
 Die WebGL-Oberfläche benötigt zusätzlich einen manuellen Browser-Smoke-Test auf aktuellem Chromium sowie Safari auf iOS oder einem vergleichbaren mobilen Browser.
 
@@ -162,4 +162,6 @@ Die Umsetzung ist fachlich abgenommen, wenn:
 - die mobile Oberfläche Spielername und zwei Termine kompakt ohne Überlagerung zusammenfasst,
 - ungültige oder manipulierte Links nicht spielbar sind,
 - der private Schlüssel nicht im öffentlichen Repository enthalten ist,
-- dauerhafte Fortschrittsspeicherung nur nach ausdrücklichem Opt-in erfolgt und ein Widerruf die zugehörigen lokalen Daten entfernt,\n- CI grün ist und der manuelle Browser-Smoke-Test bestanden wurde.
+- dauerhafte Fortschrittsspeicherung nur nach ausdrücklichem Opt-in erfolgt, die Ja/Nein-Präferenz den Erstdialog bei Folgeaufrufen unterdrückt, Deaktivieren vorhandene Fortschrittsdaten nicht automatisch löscht und eine separate Löschaktion verfügbar ist,
+- das `⋮`-Menü auf Desktop, Tablet und Mobile ohne Layoutverschiebung erreichbar ist,
+- CI grün ist und der manuelle Browser-Smoke-Test bestanden wurde.

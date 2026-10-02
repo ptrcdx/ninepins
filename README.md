@@ -60,12 +60,14 @@ The personal game token is stored in the URL fragment. It is signed but not
 encrypted; anyone who receives the complete personal link can technically
 decode the player name and assigned dates.
 
-Persistent player progress is opt-in. Without consent, progress exists only in
-the running page. When the player enables "Fortschritt speichern", the
-application stores only the draw identifier and revealed-date count in
-`localStorage`; player names and assigned dates are not written to that
-progress storage. Revoking the option removes the current draw's stored
-progress and the persistence preference.
+Persistent player progress is opt-in. On the first valid game visit, the
+player chooses whether progress should be stored on the device. The choice
+itself is remembered so the welcome dialog is not shown again. When persistence
+is enabled, the application stores only the draw identifier and revealed-date
+count in `localStorage`; player names and assigned dates are not written to
+that progress storage. Disabling persistence stops future writes without
+silently deleting existing progress. Stored progress can be deleted explicitly
+from the compact settings menu.
 
 ## Security boundary
 

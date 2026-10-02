@@ -112,13 +112,37 @@ describe("PlayerDrawSession", () => {
     expect(reloadedSession.getRevealedCount()).toBe(1);
   });
 
-  it("removes stored progress when persistence is revoked", async () => {
+  it("keeps stored progress when persistence is disabled", async () => {
     const storage = createMemoryStorage();
     const session = new PlayerDrawSession(VERIFIED_DRAW, storage);
     await session.drawDate();
     session.disablePersistence();
 
     expect(session.isPersistenceEnabled()).toBe(false);
+    const reloadedSession = new PlayerDrawSession(VERIFIED_DRAW, storage);
+    expect(reloadedSession.getRevealedCount()).toBe(1);
+  });
+
+  it("deletes stored progress only after an explicit clear action", async () => {
+    const storage = createMemoryStorage();
+    const session = new PlayerDrawSession(VERIFIED_DRAW, storage);
+    await session.drawDate();
+    session.disablePersistence();
+
+    expect(session.clearPersistedProgress(storage)).toBe(true);
+    const reloadedSession = new PlayerDrawSession(VERIFIED_DRAW, storage);
+    expect(reloadedSession.getRevealedCount()).toBe(0);
+  });
+
+  it("uses the current session as source of truth when persistence is enabled later", async () => {
+    const storage = createMemoryStorage();
+    const previousSession = new PlayerDrawSession(VERIFIED_DRAW, storage);
+    await previousSession.drawDate();
+    await previousSession.drawDate();
+
+    const currentSession = new PlayerDrawSession(VERIFIED_DRAW);
+    currentSession.enablePersistence(storage);
+
     const reloadedSession = new PlayerDrawSession(VERIFIED_DRAW, storage);
     expect(reloadedSession.getRevealedCount()).toBe(0);
   });

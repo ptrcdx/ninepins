@@ -78,19 +78,20 @@
 
   <h2>Lokaler Spielfortschritt</h2>
   <p>
-    Ohne Zustimmung wird kein Spielfortschritt dauerhaft im Browser
-    gespeichert. Wird im Spiel die Option <em>„Fortschritt speichern“</em>
-    aktiviert, speichert die Anwendung in <code>localStorage</code> die
-    Ziehungs-ID und die Anzahl bereits aufgedeckter Termine. Zusätzlich wird
-    eine technische Präferenz gespeichert, damit die Auswahl bei einem
-    erneuten Aufruf berücksichtigt werden kann.
+    Beim ersten gültigen Spielaufruf wird gefragt, ob der Spielfortschritt auf
+    diesem Gerät gespeichert werden soll. Die getroffene Auswahl wird als
+    technische Präferenz in <code>localStorage</code> gespeichert, damit der
+    Hinweis bei späteren Aufrufen nicht erneut angezeigt werden muss.
   </p>
   <p>
-    Spielername und Termine werden nicht als Fortschrittsdaten in
-    <code>localStorage</code> gespeichert. Wird die Option deaktiviert, entfernt
-    die Anwendung den gespeicherten Fortschritt der aktuellen Ziehung und die
-    Zustimmungsmarkierung. Browserdaten können zusätzlich jederzeit über die
-    Browsereinstellungen gelöscht werden.
+    Nur bei Zustimmung speichert die Anwendung zusätzlich die Ziehungs-ID und
+    die Anzahl bereits aufgedeckter Termine in <code>localStorage</code>.
+    Spielername und Termine werden nicht als Fortschrittsdaten gespeichert.
+    Wird die Speicherung später deaktiviert, werden keine weiteren
+    Fortschrittsänderungen dauerhaft geschrieben; bereits gespeicherter
+    Fortschritt bleibt zunächst erhalten. Er kann über das Menü im Spiel
+    ausdrücklich gelöscht werden. Browserdaten können zusätzlich jederzeit
+    über die Browsereinstellungen gelöscht werden.
   </p>
 
   <h2>Persönlicher Spiellink</h2>
@@ -109,9 +110,11 @@
 
   <h2>Speicherdauer</h2>
   <p>
-    Lokal gespeicherter Spielfortschritt bleibt bis zum Widerruf der
-    Speicheroption, bis zur Löschung der Browserdaten oder bis zur manuellen
-    Entfernung durch den Browser erhalten. Für Server- und Sicherheitsprotokolle
+    Lokal gespeicherter Spielfortschritt bleibt bis zur ausdrücklichen
+    Löschung im Spiel, bis zur Löschung der Browserdaten oder bis zur manuellen
+    Entfernung durch den Browser erhalten. Die gespeicherte Auswahl zur
+    Fortschrittsspeicherung bleibt bis zu einer Änderung der Einstellung oder
+    bis zur Löschung der Browserdaten erhalten. Für Server- und Sicherheitsprotokolle
     von GitHub gelten die von GitHub festgelegten Aufbewahrungsfristen; diese
     werden von Pumperella nicht gesteuert.
   </p>

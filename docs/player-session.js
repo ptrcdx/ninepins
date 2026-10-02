@@ -39,29 +39,43 @@ export class PlayerDrawSession {
   }
 
   /**
-   * Enables persistent progress after an explicit user choice.
+   * Enables persistent progress after an explicit user choice. The current
+   * in-memory session is authoritative so stale data from an earlier opt-in
+   * is not restored when persistence is enabled later.
    *
    * @param {{getItem:(key:string)=>string|null,setItem:(key:string,value:string)=>void,removeItem?:(key:string)=>void}} storage Persistent storage adapter.
-   * @returns {number} Current revealed count after synchronization.
+   * @returns {number} Current revealed count.
    */
   enablePersistence(storage) {
     validateStorage(storage);
     this.storage = storage;
-    this.synchronizeFromStorage();
-    this.persistCount(this.revealedCount);
+    this.writePersistedCount(this.revealedCount);
     return this.revealedCount;
   }
 
-  /** Disables persistence and removes stored progress for this draw. */
+  /** Stops future persistence without deleting previously stored progress. */
   disablePersistence() {
-    if (this.storage && typeof this.storage.removeItem === "function") {
-      try {
-        this.storage.removeItem(this.storageKey);
-      } catch {
-        // Storage cleanup may be blocked; persistence is still disabled below.
-      }
-    }
     this.storage = null;
+  }
+
+  /**
+   * Explicitly deletes stored progress for this draw without changing the
+   * currently visible in-memory session.
+   *
+   * @param {{removeItem?:(key:string)=>void}|null} [storage=this.storage] Storage adapter.
+   * @returns {boolean} Whether the deletion request succeeded.
+   */
+  clearPersistedProgress(storage = this.storage) {
+    if (!storage || typeof storage.removeItem !== "function") {
+      return false;
+    }
+
+    try {
+      storage.removeItem(this.storageKey);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /** @returns {boolean} Whether another successful throw can reveal a date. */
@@ -138,11 +152,20 @@ export class PlayerDrawSession {
       return;
     }
 
+    const revealedCount = Math.max(
+      requestedCount,
+      this.readPersistedCount(),
+    );
+    this.writePersistedCount(revealedCount);
+  }
+
+  /** @param {number} revealedCount Exact progress to write. */
+  writePersistedCount(revealedCount) {
+    if (!this.storage) {
+      return;
+    }
+
     try {
-      const revealedCount = Math.max(
-        requestedCount,
-        this.readPersistedCount(),
-      );
       this.storage.setItem(
         this.storageKey,
         JSON.stringify({

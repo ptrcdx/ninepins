@@ -228,8 +228,7 @@ function installPlayerHud(playerName, dateCount) {
 
         body.pumperella-two-date-draw .brand,
         body.pumperella-two-date-draw .dates,
-        body.pumperella-two-date-draw .status,
-        body.pumperella-two-date-draw .persistence-card {
+        body.pumperella-two-date-draw .status {
           min-width: 0;
           max-width: none;
           border: 0;
@@ -374,33 +373,6 @@ function installPlayerHud(playerName, dateCount) {
           margin-top: 4px;
           font-size: 16px;
           line-height: 1.1;
-        }
-
-        body.pumperella-two-date-draw .persistence-card {
-          grid-column: 1 / -1;
-          width: 100%;
-          max-width: none;
-          margin-top: 8px;
-          padding: 8px 10px;
-          border-top: 1px solid rgba(255,255,255,.08);
-        }
-
-        body.pumperella-two-date-draw .persistence-choice {
-          min-height: 38px;
-          gap: 10px;
-        }
-
-        body.pumperella-two-date-draw .persistence-copy strong {
-          font-size: 12px;
-        }
-
-        body.pumperella-two-date-draw .persistence-copy span {
-          font-size: 9.5px;
-        }
-
-        body.pumperella-two-date-draw .persistence-footer {
-          margin-top: 5px;
-          padding-top: 5px;
         }
 
         /* Result feedback must never sit on top of the static HUD panel.
