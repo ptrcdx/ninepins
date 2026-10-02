@@ -150,6 +150,17 @@ describe("GitHub Pages runtime dependency closure", () => {
     expect(missingReferences).toEqual([]);
   });
 
+  it("keeps smartphone landscape blocked without using orientation lock APIs", () => {
+    const indexContent = readFileSync(resolve(DOCS_ROOT, "index.html"), "utf8");
+    const appContent = readFileSync(resolve(DOCS_ROOT, "app.js"), "utf8");
+
+    expect(indexContent).toContain('id="portrait-required"');
+    expect(appContent).toContain(
+      "(orientation: landscape) and (max-height: 560px) and (pointer: coarse)",
+    );
+    expect(appContent).not.toContain("screen.orientation.lock");
+  });
+
   it("ships the complete pinned Three.js r180 module pair", () => {
     const modulePath = resolve(DOCS_ROOT, "vendor/three/three.module.js");
     const corePath = resolve(DOCS_ROOT, "vendor/three/three.core.js");

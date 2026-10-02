@@ -89,6 +89,7 @@ Beim ersten gültigen Spielaufruf erscheint ein kurzer Willkommensdialog mit Spi
 ## 6. 3D-Oberfläche und Branding
 
 - Vollbilddarstellung mit responsiver Kamera.
+- Smartphone-Nutzung ist auf Hochformat begrenzt: Bei Querformat mit phone-typisch niedriger Viewport-Höhe und primärer Touch-Eingabe überdeckt ein modaler Hinweis das Spiel vollständig. Nach Rückkehr ins Hochformat wird automatisch weitergespielt. Desktop und Tablets werden dadurch nicht eingeschränkt.
 - Neun Kegel in klarer `1–2–3–2–1`-Raute.
 - Echte, tiefer liegende Gossen ohne Bumper.
 - Ein Gossenball kann keine Kegel treffen.
@@ -164,4 +165,5 @@ Die Umsetzung ist fachlich abgenommen, wenn:
 - der private Schlüssel nicht im öffentlichen Repository enthalten ist,
 - dauerhafte Fortschrittsspeicherung nur nach ausdrücklichem Opt-in erfolgt, die Ja/Nein-Präferenz den Erstdialog bei Folgeaufrufen unterdrückt, Deaktivieren vorhandene Fortschrittsdaten nicht automatisch löscht und eine separate Löschaktion verfügbar ist,
 - das `⋮`-Menü auf Desktop, Tablet und Mobile ohne Layoutverschiebung erreichbar ist,
+- Smartphones im Querformat das Spiel nicht bedienen lassen und stattdessen einen Hochformat-Hinweis zeigen, während Desktop und Tablets davon unbeeinflusst bleiben,
 - CI grün ist und der manuelle Browser-Smoke-Test bestanden wurde.

@@ -6,6 +6,8 @@ import { installPlayerExperience } from "./player-experience.js?v=10";
 const PERSISTENCE_CONSENT_KEY = "pumperella.progressPersistenceConsent.v1";
 const PERSISTENCE_GRANTED = "granted";
 const PERSISTENCE_DENIED = "denied";
+const MOBILE_LANDSCAPE_QUERY =
+  "(orientation: landscape) and (max-height: 560px) and (pointer: coarse)";
 const LEGACY_IDENTITY_QUERY_KEYS = Object.freeze([
   "player",
   "name",
@@ -20,6 +22,8 @@ const LEGACY_IDENTITY_QUERY_KEYS = Object.freeze([
  * @returns {Promise<PlayerDrawSession>} Authenticated player draw session.
  */
 export async function createPlayerSession() {
+  installMobilePortraitGuard();
+
   const token = window.location.hash.slice(1);
   if (!token) {
     throw new RangeError("Dieser Link enthält keinen persönlichen Spielcode.");
@@ -50,6 +54,53 @@ export async function createPlayerSession() {
   await installPlayerExperience(playerSession);
 
   return playerSession;
+}
+
+/**
+ * Blocks the game only on phone-sized coarse-pointer landscape viewports.
+ * A native modal dialog is used so the guard stays above the welcome dialog
+ * and settings UI. Rotating back to portrait closes it automatically.
+ */
+function installMobilePortraitGuard() {
+  const dialog = document.getElementById("portrait-required");
+  if (
+    !dialog ||
+    typeof dialog.showModal !== "function" ||
+    typeof window.matchMedia !== "function" ||
+    dialog.dataset.guardInstalled === "true"
+  ) {
+    return;
+  }
+
+  dialog.dataset.guardInstalled = "true";
+  const mediaQuery = window.matchMedia(MOBILE_LANDSCAPE_QUERY);
+
+  const synchronize = () => {
+    if (mediaQuery.matches) {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+      return;
+    }
+
+    if (dialog.open) {
+      dialog.close();
+    }
+  };
+
+  dialog.addEventListener("cancel", (event) => {
+    if (mediaQuery.matches) {
+      event.preventDefault();
+    }
+  });
+
+  if (typeof mediaQuery.addEventListener === "function") {
+    mediaQuery.addEventListener("change", synchronize);
+  } else if (typeof mediaQuery.addListener === "function") {
+    mediaQuery.addListener(synchronize);
+  }
+
+  synchronize();
 }
 
 /**
