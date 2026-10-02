@@ -286,6 +286,10 @@ const SETTINGS = Object.freeze({
   // Once released, a real nine-pin ball has enough momentum to reach the pit.
   // Keep a small forward floor instead of treating a slowly rolling ball as finished.
   minForwardTravelSpeed: 2.6,
+  // BETA: After the first pin impact, preserve only a low residual forward
+  // speed while the ball is still inside the pin deck. This prevents a ball
+  // that transferred most of its momentum from stopping before the rear pit.
+  minPostImpactForwardTravelSpeed: 1.2,
   noHitHardTimeout: 8.5,
   hitHardTimeout: 5.0,
   dateRevealDelayAfterHit: 0.75,
@@ -789,14 +793,26 @@ class BowlingPhysics {
     if (!this.shotActive || this.ballAbsorbed) return;
     if (this.ball.position.z <= SETTINGS.pitAbsorbZ) return;
 
-    // Do NOT inject forward velocity while the ball is inside the pin cluster.
-    // V20's unconditional minimum speed could make the ball look as if it were
-    // driving through a pin instead of transferring momentum to it. Keep the
-    // low-resistance assist only before the deck and after the ball has cleared it.
+    // BETA keeps the original no-assist behavior until the first pin impact so
+    // the ball can transfer momentum naturally. After impact, a much lower
+    // residual speed prevents the ball from dying on the pin deck before it can
+    // roll into the rear pit. Before and after the deck, the normal lane floor
+    // remains unchanged.
     const beforeDeck = this.ball.position.z > -9.75;
     const afterDeck = this.ball.position.z < -14.70;
-    if ((this.gutter || beforeDeck || afterDeck) && this.ball.velocity.z > -SETTINGS.minForwardTravelSpeed) {
-      this.ball.velocity.z = -SETTINGS.minForwardTravelSpeed;
+    if (this.gutter || beforeDeck || afterDeck) {
+      if (this.ball.velocity.z > -SETTINGS.minForwardTravelSpeed) {
+        this.ball.velocity.z = -SETTINGS.minForwardTravelSpeed;
+      }
+      return;
+    }
+
+    const hasHitPin = this.firstHitElapsed !== null;
+    if (
+      hasHitPin &&
+      this.ball.velocity.z > -SETTINGS.minPostImpactForwardTravelSpeed
+    ) {
+      this.ball.velocity.z = -SETTINGS.minPostImpactForwardTravelSpeed;
     }
   }
 
