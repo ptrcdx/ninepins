@@ -818,17 +818,98 @@ function createCurvedBallPrintGeometry(three, radius, width, height) {
   return geometry;
 }
 
-/** @param {typeof import("three")} three Three.js namespace. */
+/**
+ * Rasterizes the traced SVG crown coordinates into a CanvasTexture.
+ *
+ * The SVG remains the editable vector source in assets/pumperella-crown.svg.
+ * Rendering the same vector coordinates synchronously avoids browser-specific
+ * SVG TextureLoader failures while preserving the exact traced crown shape.
+ *
+ * @param {typeof import("three")} three Three.js namespace.
+ * @returns {import("three").CanvasTexture} Ready-to-render crown texture.
+ */
 function createVectorBallCrownTexture(three) {
-  const texture = new three.TextureLoader().load(
-    new URL("./assets/pumperella-crown.svg", import.meta.url).href,
-    (loadedTexture) => {
-      loadedTexture.colorSpace = three.SRGBColorSpace;
-      loadedTexture.anisotropy = 8;
-      loadedTexture.needsUpdate = true;
-    },
-  );
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 360;
+
+  const context = canvas.getContext("2d");
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.fillStyle = "#050505";
+
+  // Map the SVG viewBox (70 105 442 309) into the texture with a small margin.
+  const padding = 14;
+  const scaleX = (canvas.width - padding * 2) / 442;
+  const scaleY = (canvas.height - padding * 2) / 309;
+  const scale = Math.min(scaleX, scaleY);
+  const renderedWidth = 442 * scale;
+  const renderedHeight = 309 * scale;
+  const offsetX = (canvas.width - renderedWidth) / 2 - 70 * scale;
+  const offsetY = (canvas.height - renderedHeight) / 2 - 105 * scale;
+
+  context.save();
+  context.setTransform(scale, 0, 0, scale, offsetX, offsetY);
+
+  context.beginPath();
+  context.moveTo(97, 208);
+  context.lineTo(138, 299);
+  context.lineTo(164, 370);
+  context.lineTo(206, 356);
+  context.lineTo(267, 348);
+  context.lineTo(318, 348);
+  context.lineTo(351, 351);
+  context.lineTo(387, 358);
+  context.lineTo(421, 370);
+  context.lineTo(456, 277);
+  context.lineTo(490, 207);
+  context.lineTo(350, 291);
+  context.lineTo(307, 171);
+  context.lineTo(293, 138);
+  context.lineTo(274, 182);
+  context.lineTo(235, 291);
+  context.closePath();
+  context.fill();
+
+  for (const points of [
+    [[196, 213], [197, 259], [231, 279], [240, 254]],
+    [[390, 213], [345, 254], [353, 279], [389, 258]],
+  ]) {
+    context.beginPath();
+    points.forEach(([x, y], index) => {
+      if (index === 0) {
+        context.moveTo(x, y);
+      } else {
+        context.lineTo(x, y);
+      }
+    });
+    context.closePath();
+    context.fill();
+  }
+
+  for (const [x, y, radius] of [
+    [293, 121, 12],
+    [86.5, 197.5, 9.5],
+    [501.5, 196.5, 9.5],
+    [190, 202, 8],
+    [396.5, 202, 7.5],
+  ]) {
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  context.beginPath();
+  context.ellipse(293, 385.5, 124, 24.5, 0, 0, Math.PI * 2);
+  context.fill();
+
+  context.restore();
+
+  const texture = new three.CanvasTexture(canvas);
   texture.colorSpace = three.SRGBColorSpace;
+  texture.anisotropy = 8;
+  texture.needsUpdate = true;
   return texture;
 }
 
