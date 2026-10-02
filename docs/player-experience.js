@@ -767,7 +767,7 @@ function addOfficialCrownToBall(ball, three) {
   // Use a real plane tangent to the sphere instead of a Sprite. A Sprite always
   // faces the camera and therefore looked like a loose sticker. This mesh keeps
   // its orientation relative to the ball and rotates naturally with it.
-  const geometry = new three.PlaneGeometry(0.32, 0.17);
+  const geometry = new three.PlaneGeometry(0.34, 0.20);
   const material = new three.MeshBasicMaterial({
     map: createBallPrintTexture(three),
     transparent: true,
@@ -802,45 +802,54 @@ function createBallPrintTexture(three) {
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = "high";
 
-  // Deliberately draw only the crown mark. The official source logo contains
-  // a pink ball in the middle, which read as a hole when placed on a pink ball.
-  context.strokeStyle = "rgba(255,247,251,.98)";
-  context.fillStyle = "rgba(255,247,251,.98)";
-  context.lineWidth = 15;
+  // Reproduce the solid black crown from the official Pumperella logo as a
+  // clean print. No glow, outline or white backing is used on the ball.
+  context.fillStyle = "#050505";
   context.lineJoin = "round";
   context.lineCap = "round";
 
-  const crown = [
-    [80, 166],
-    [128, 96],
-    [196, 146],
-    [256, 68],
-    [316, 146],
-    [384, 96],
-    [432, 166],
-  ];
-
   context.beginPath();
-  crown.forEach(([x, y], index) => {
-    if (index === 0) context.moveTo(x, y);
-    else context.lineTo(x, y);
-  });
-  context.stroke();
+  context.moveTo(70, 178);
+  context.lineTo(112, 126);
+  context.lineTo(205, 178);
+  context.lineTo(256, 62);
+  context.lineTo(307, 178);
+  context.lineTo(400, 126);
+  context.lineTo(442, 178);
+  context.quadraticCurveTo(256, 222, 70, 178);
+  context.closePath();
+  context.fill();
 
-  context.beginPath();
-  context.moveTo(104, 166);
-  context.quadraticCurveTo(256, 214, 408, 166);
-  context.stroke();
-
-  for (const [x, y, r] of [
-    [128, 96, 11],
-    [256, 68, 13],
-    [384, 96, 11],
+  // The two shorter inner points are characteristic of the crown in the logo.
+  for (const points of [
+    [[178, 150], [178, 124], [190, 124], [224, 160], [208, 178]],
+    [[288, 160], [322, 124], [334, 124], [334, 150], [304, 178]],
   ]) {
     context.beginPath();
-    context.arc(x, y, r, 0, Math.PI * 2);
+    points.forEach(([x, y], index) => {
+      if (index === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    });
+    context.closePath();
     context.fill();
   }
+
+  for (const [x, y, radius] of [
+    [112, 126, 15],
+    [190, 124, 12],
+    [256, 62, 17],
+    [322, 124, 12],
+    [400, 126, 15],
+  ]) {
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  // Keep the oval base visually separate, matching the source logo.
+  context.beginPath();
+  context.ellipse(256, 216, 142, 20, 0, 0, Math.PI * 2);
+  context.fill();
 
   const texture = new three.CanvasTexture(canvas);
   texture.colorSpace = three.SRGBColorSpace;
