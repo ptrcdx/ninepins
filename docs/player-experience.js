@@ -760,97 +760,60 @@ function addOfficialCrownToBall(ball, three) {
     }
   }
 
-  const radius = ball.geometry?.parameters?.radius ?? 0.33;
-  const crownOffset = resolveBallCrownOffset(radius);
-  const normal = new three.Vector3(...crownOffset).normalize();
-
-  // The crown is based on the traced SVG asset and uses a subdivided mesh whose
-  // vertices follow the sphere. This makes the mark read as a direct print on
-  // the lacquered ball instead of a flat sticker hovering in front of it.
-  const geometry = createCurvedBallPrintGeometry(three, radius, 0.40, 0.28);
-  const material = new three.MeshBasicMaterial({
-    map: createVectorBallCrownTexture(three),
-    transparent: true,
-    alphaTest: 0.08,
-    depthTest: true,
-    depthWrite: false,
-    polygonOffset: true,
-    polygonOffsetFactor: -2,
-    polygonOffsetUnits: -2,
-    toneMapped: false,
-    side: three.DoubleSide,
-  });
-  const emblem = new three.Mesh(geometry, material);
-
-  emblem.name = "PumperellaOfficialBallCrown";
-  emblem.position.copy(normal).multiplyScalar(radius + 0.0035);
-  emblem.quaternion.setFromUnitVectors(
-    new three.Vector3(0, 0, 1),
-    normal,
-  );
-  emblem.renderOrder = 10;
-  ball.add(emblem);
-}
-
-/**
- * Creates a dense rectangular patch bent to the ball radius.
- *
- * @param {typeof import("three")} three Three.js namespace.
- * @param {number} radius Ball radius.
- * @param {number} width Printed crown width.
- * @param {number} height Printed crown height.
- * @returns {import("three").PlaneGeometry} Curved print geometry.
- */
-function createCurvedBallPrintGeometry(three, radius, width, height) {
-  const geometry = new three.PlaneGeometry(width, height, 24, 16);
-  const positions = geometry.attributes.position;
-
-  for (let index = 0; index < positions.count; index += 1) {
-    const x = positions.getX(index);
-    const y = positions.getY(index);
-    const radialSquared = x * x + y * y;
-    const surfaceZ = Math.sqrt(Math.max(radius * radius - radialSquared, 0));
-    positions.setZ(index, surfaceZ - radius);
+  const material = Array.isArray(ball.material)
+    ? ball.material[0]
+    : ball.material;
+  if (!material || !material.isMeshStandardMaterial) {
+    return;
   }
 
-  positions.needsUpdate = true;
-  geometry.computeVertexNormals();
-  return geometry;
+  // Print the crown into the sphere's own color map. Unlike a plane/sprite
+  // decal, this cannot disappear behind the ball because of depth testing and
+  // it follows the SphereGeometry UVs and rotation exactly.
+  const previousMap = material.map;
+  material.map = createPrintedBallTexture(three);
+  material.needsUpdate = true;
+  material.userData.pumperellaCrownPrinted = true;
+  previousMap?.dispose();
 }
 
 /**
- * Rasterizes the traced SVG crown coordinates into a CanvasTexture.
+ * Creates the ball color map with the traced crown positioned on the initial
+ * camera-facing point of the sphere.
  *
- * The SVG remains the editable vector source in assets/pumperella-crown.svg.
- * Rendering the same vector coordinates synchronously avoids browser-specific
- * SVG TextureLoader failures while preserving the exact traced crown shape.
+ * The editable vector source remains assets/pumperella-crown.svg. These paths
+ * use the same traced coordinates so rendering is synchronous and independent
+ * of external/SVG texture loading.
  *
  * @param {typeof import("three")} three Three.js namespace.
- * @returns {import("three").CanvasTexture} Ready-to-render crown texture.
+ * @returns {import("three").CanvasTexture} Ball color texture.
  */
-function createVectorBallCrownTexture(three) {
+function createPrintedBallTexture(three) {
   const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 360;
+  canvas.width = 1024;
+  canvas.height = 512;
 
   const context = canvas.getContext("2d");
-  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = "high";
-  context.fillStyle = "#050505";
 
-  // Map the SVG viewBox (70 105 442 309) into the texture with a small margin.
-  const padding = 14;
-  const scaleX = (canvas.width - padding * 2) / 442;
-  const scaleY = (canvas.height - padding * 2) / 309;
-  const scale = Math.min(scaleX, scaleY);
-  const renderedWidth = 442 * scale;
-  const renderedHeight = 309 * scale;
-  const offsetX = (canvas.width - renderedWidth) / 2 - 70 * scale;
-  const offsetY = (canvas.height - renderedHeight) / 2 - 105 * scale;
+  // SphereGeometry maps the launch-camera-facing normal
+  // (0, sin(30deg), cos(30deg)) to approximately u=.25, v=.667.
+  // CanvasTexture uses the conventional top-left image origin, so the source
+  // image centre is placed at x=.25W, y=.333H.
+  const targetWidth = 176;
+  const targetHeight = targetWidth * 309 / 442;
+  const targetCenterX = canvas.width * 0.25;
+  const targetCenterY = canvas.height / 3;
+  const scale = Math.min(targetWidth / 442, targetHeight / 309);
+  const offsetX = targetCenterX - ((70 + 442 / 2) * scale);
+  const offsetY = targetCenterY - ((105 + 309 / 2) * scale);
 
   context.save();
   context.setTransform(scale, 0, 0, scale, offsetX, offsetY);
+  context.fillStyle = "#050505";
 
   context.beginPath();
   context.moveTo(97, 208);
@@ -903,7 +866,6 @@ function createVectorBallCrownTexture(three) {
   context.beginPath();
   context.ellipse(293, 385.5, 124, 24.5, 0, 0, Math.PI * 2);
   context.fill();
-
   context.restore();
 
   const texture = new three.CanvasTexture(canvas);
