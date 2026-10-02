@@ -767,7 +767,7 @@ function addOfficialCrownToBall(ball, three) {
   // Use a real plane tangent to the sphere instead of a Sprite. A Sprite always
   // faces the camera and therefore looked like a loose sticker. This mesh keeps
   // its orientation relative to the ball and rotates naturally with it.
-  const geometry = new three.PlaneGeometry(0.34, 0.20);
+  const geometry = new three.PlaneGeometry(0.40, 0.26);
   const material = new three.MeshBasicMaterial({
     map: createBallPrintTexture(three),
     transparent: true,
@@ -809,21 +809,21 @@ function createBallPrintTexture(three) {
   context.lineCap = "round";
 
   context.beginPath();
-  context.moveTo(70, 178);
+  context.moveTo(66, 176);
   context.lineTo(112, 126);
-  context.lineTo(205, 178);
-  context.lineTo(256, 62);
-  context.lineTo(307, 178);
+  context.lineTo(200, 174);
+  context.lineTo(256, 46);
+  context.lineTo(312, 174);
   context.lineTo(400, 126);
-  context.lineTo(442, 178);
-  context.quadraticCurveTo(256, 222, 70, 178);
+  context.lineTo(446, 176);
+  context.quadraticCurveTo(256, 214, 66, 176);
   context.closePath();
   context.fill();
 
   // The two shorter inner points are characteristic of the crown in the logo.
   for (const points of [
-    [[178, 150], [178, 124], [190, 124], [224, 160], [208, 178]],
-    [[288, 160], [322, 124], [334, 124], [334, 150], [304, 178]],
+    [[176, 144], [176, 112], [192, 112], [222, 154], [206, 170]],
+    [[290, 154], [320, 112], [336, 112], [336, 144], [306, 170]],
   ]) {
     context.beginPath();
     points.forEach(([x, y], index) => {
@@ -836,9 +836,9 @@ function createBallPrintTexture(three) {
 
   for (const [x, y, radius] of [
     [112, 126, 15],
-    [190, 124, 12],
-    [256, 62, 17],
-    [322, 124, 12],
+    [192, 112, 11],
+    [256, 46, 17],
+    [320, 112, 11],
     [400, 126, 15],
   ]) {
     context.beginPath();
@@ -848,7 +848,7 @@ function createBallPrintTexture(three) {
 
   // Keep the oval base visually separate, matching the source logo.
   context.beginPath();
-  context.ellipse(256, 216, 142, 20, 0, 0, Math.PI * 2);
+  context.ellipse(256, 210, 144, 18, 0, 0, Math.PI * 2);
   context.fill();
 
   const texture = new three.CanvasTexture(canvas);
