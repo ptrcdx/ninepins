@@ -271,21 +271,25 @@ const SETTINGS = Object.freeze({
   laneHalfWidth: 1.98,
   gutterWidth: 0.64,
   gutterTopY: -0.11,
+  trackConstraintEndZ: -15.05,
   pitAbsorbZ: -16.05,
-  // Physics distances are expressed in model units, so acceleration must use
-  // the same geometric scale. 9.81 m/s² becomes about 36.91 model units/s².
-  gravityY: -9.81 * MODEL_UNITS_PER_METRE,
-  fixedStep: 1 / 120,
-  maxSubsteps: 5,
-  pinLinearDamping: 0.005,
-  pinAngularDamping: 0.005,
+  fixedStep: 1 / 60,
+  maxSubsteps: 2,
+  pinLinearDamping: 0.010,
+  pinAngularDamping: 0.004,
   floorClearance: 0.003,
   // Simulation units are scaled from the real 160 mm ball. At full pull,
   // 22 units/s corresponds to roughly 6.2 m/s at this geometric scale.
   minLaunchSpeed: 11.5,
   maxLaunchSpeed: 20.5,
   maxSideSpeed: 4.2,
-  dateRevealDelayAfterHit: 0.75
+  // Once released, a real nine-pin ball has enough momentum to reach the pit.
+  // Keep a small forward floor instead of treating a slowly rolling ball as finished.
+  minForwardTravelSpeed: 2.6,
+  noHitHardTimeout: 8.5,
+  hitHardTimeout: 5.0,
+  dateRevealDelayAfterHit: 0.75,
+  minHitResolutionAfterFirstImpact: 1.55
 });
 
 /**
@@ -504,12 +508,12 @@ class BowlingPhysics {
    */
   constructor(cannon) {
     this.C = cannon;
-    this.world = new cannon.World({ gravity: new cannon.Vec3(0, SETTINGS.gravityY, 0) });
+    this.world = new cannon.World({ gravity: new cannon.Vec3(0, -9.82, 0) });
     this.world.allowSleep = true;
-    this.world.solver.iterations = 12;
+    this.world.solver.iterations = 5;
     this.world.solver.tolerance = 1e-4;
-    this.world.defaultContactMaterial.friction = 0.30;
-    this.world.defaultContactMaterial.restitution = 0.02;
+    this.world.defaultContactMaterial.friction = 0.32;
+    this.world.defaultContactMaterial.restitution = 0.008;
     this.massProperties = computeMassProperties(PIN_PROFILE, SETTINGS.pinMass);
     // A real skittle is not a homogeneous solid. Bias the effective rigid-body COM
     // slightly upward so the broad belly does not behave like a roly-poly toy.
@@ -518,16 +522,16 @@ class BowlingPhysics {
     this.pinMaterial = new cannon.Material('pin');
     this.ballMaterial = new cannon.Material('ball');
     this.world.addContactMaterial(new cannon.ContactMaterial(this.pinMaterial, this.surfaceMaterial, {
-      friction: 0.48, restitution: 0.07, contactEquationStiffness: 6e6, contactEquationRelaxation: 5
+      friction: 0.48, restitution: 0.004, contactEquationStiffness: 6e6, contactEquationRelaxation: 5
     }));
     this.world.addContactMaterial(new cannon.ContactMaterial(this.ballMaterial, this.surfaceMaterial, {
-      friction: 0.12, restitution: 0.02
+      friction: 0.12, restitution: 0.003
     }));
     this.world.addContactMaterial(new cannon.ContactMaterial(this.ballMaterial, this.pinMaterial, {
-      friction: 0.22, restitution: 0.55
+      friction: 0.22, restitution: 0.012
     }));
     this.world.addContactMaterial(new cannon.ContactMaterial(this.pinMaterial, this.pinMaterial, {
-      friction: 0.25, restitution: 0.45
+      friction: 0.26, restitution: 0.014
     }));
     this.surfaces = [];
     this.pins = [];
@@ -545,8 +549,8 @@ class BowlingPhysics {
       mass: SETTINGS.ballMass,
       shape: new cannon.Sphere(SETTINGS.ballRadius),
       material: this.ballMaterial,
-      linearDamping: 0.005,
-      angularDamping: 0.005,
+      linearDamping: 0.010,
+      angularDamping: 0.025,
       collisionFilterGroup: 4,
       collisionFilterMask: 1 | 2
     });
@@ -626,7 +630,7 @@ class BowlingPhysics {
     body.position.set(x, center + SETTINGS.floorClearance, z);
     this.applyPinInertia(body);
     this.world.addBody(body);
-    this.pins.push({ body, home: { x, z } });
+    this.pins.push({ body, home: { x, z }, stillTime: 0 });
     this.pinIds.add(body.id);
   }
 
@@ -639,10 +643,10 @@ class BowlingPhysics {
     body.updateMassProperties();
     if (body.type !== this.C.Body.DYNAMIC || body.mass === 0) return;
     const { inertiaX, inertiaY } = this.massProperties;
-    // Use the inertia derived from the unchanged pin profile and its real mass.
-    // No gameplay multiplier is applied to make the pin tip more easily.
-    body.inertia.set(inertiaX, inertiaY, inertiaX);
-    body.invInertia.set(1 / inertiaX, 1 / inertiaY, 1 / inertiaX);
+    // V22: real mass is retained, but horizontal inertia is reduced to match the quicker tipping seen in real skittles.
+    const tippingInertia = inertiaX * 0.42;
+    body.inertia.set(tippingInertia, inertiaY, tippingInertia);
+    body.invInertia.set(1 / tippingInertia, 1 / inertiaY, 1 / tippingInertia);
     body.updateInertiaWorld(true);
   }
 
@@ -705,8 +709,9 @@ class BowlingPhysics {
   }
 
   /**
-   * Advances the rigid-body simulation without injecting corrective velocity
-   * or constraining the ball to a scripted trajectory.
+   * Advance physics. The pin-deck section is temporarily sub-stepped so the
+   * fast ball cannot tunnel through the relatively narrow pin colliders.
+   * Outside the deck the cheaper 60 Hz step is retained for mobile performance.
    * @param {number} dt Fixed simulation step in seconds.
    */
   step(dt) {
@@ -719,9 +724,12 @@ class BowlingPhysics {
       }
     }
 
-    // A 120 Hz step reduces tunneling and improves simultaneous pin contacts.
-    // From this point onward Cannon alone determines translation and rotation.
+    // V25: one deterministic 60 Hz world step. The pin colliders are now simple,
+    // slightly fuller compounds, so a costly local micro-step pass is no longer needed.
     this.world.step(dt);
+    this.constrainBallToTrack(dt);
+    this.keepBallMovingToPit();
+    this.settleStandingPins(dt);
 
     if (this.shotActive && !this.ballAbsorbed && this.ball.position.z < SETTINGS.pitAbsorbZ) {
       this.ballAbsorbed = true;
@@ -741,6 +749,90 @@ class BowlingPhysics {
     else this.quietTime = 0;
   }
 
+  /**
+   * Keep the heavy nine-pin ball in rolling contact with the lane or gutter.
+   * Real balls may vibrate microscopically, but they do not climb over the pin
+   * bodies like a light arcade ball. Horizontal collision impulses are left to
+   * Cannon; only non-physical vertical launch energy is removed.
+   * @param {number} dt Fixed simulation step in seconds.
+   */
+  constrainBallToTrack(dt) {
+    if (!this.shotActive || this.ball.position.z < SETTINGS.trackConstraintEndZ) return;
+
+    const side = Math.sign(this.ball.position.x || this.ball.velocity.x || 1);
+    const gutterCenter = side * (SETTINGS.laneHalfWidth + SETTINGS.gutterWidth / 2);
+    const surfaceTop = this.gutter ? SETTINGS.gutterTopY : 0;
+    const targetY = surfaceTop + SETTINGS.ballRadius + SETTINGS.floorClearance;
+
+    // Maintain continuous rolling contact instead of allowing upward pin-ramping.
+    this.ball.position.y = targetY;
+    this.ball.velocity.y = 0;
+
+    if (this.gutter) {
+      // A real gutter channels the ball towards the pit. Dampen sideways motion
+      // and gently center it in the recessed channel while preserving forward speed.
+      const error = gutterCenter - this.ball.position.x;
+      this.ball.velocity.x += error * 7.0 * dt;
+      this.ball.velocity.x *= Math.max(0, 1 - 3.2 * dt);
+      this.ball.velocity.z = Math.min(this.ball.velocity.z, -SETTINGS.minForwardTravelSpeed);
+    }
+
+    this.ball.aabbNeedsUpdate = true;
+  }
+
+  /**
+   * Preserve forward travel until the ball reaches the pit. This represents the
+   * very low rolling resistance of the real lane and avoids visually implausible
+   * shots dying halfway down the lane. It never adds upward or sideways energy.
+   */
+  keepBallMovingToPit() {
+    if (!this.shotActive || this.ballAbsorbed) return;
+    if (this.ball.position.z <= SETTINGS.pitAbsorbZ) return;
+
+    // Do NOT inject forward velocity while the ball is inside the pin cluster.
+    // V20's unconditional minimum speed could make the ball look as if it were
+    // driving through a pin instead of transferring momentum to it. Keep the
+    // low-resistance assist only before the deck and after the ball has cleared it.
+    const beforeDeck = this.ball.position.z > -9.75;
+    const afterDeck = this.ball.position.z < -14.70;
+    if ((this.gutter || beforeDeck || afterDeck) && this.ball.velocity.z > -SETTINGS.minForwardTravelSpeed) {
+      this.ball.velocity.z = -SETTINGS.minForwardTravelSpeed;
+    }
+  }
+
+  /**
+   * Standing pins can receive tiny solver impulses from neighbouring contacts and
+   * appear to tremble indefinitely. If a pin is essentially upright and almost
+   * motionless for a short interval, put it to sleep. Falling/rolling pins are
+   * untouched because their tilt or velocity is above the thresholds.
+   * @param {number} dt Fixed simulation step in seconds.
+   */
+  settleStandingPins(dt) {
+    for (const pin of this.pins) {
+      const body = pin.body;
+      // Y component of the rotated up vector, derived directly from quaternion.
+      // This avoids allocating a temporary Vec3 for every pin on every physics step.
+      const q = body.quaternion;
+      const upY = 1 - 2 * (q.x * q.x + q.z * q.z);
+      const v = body.velocity;
+      const w = body.angularVelocity;
+      const linearQuiet = (v.x*v.x + v.y*v.y + v.z*v.z) < 0.0090;
+      const angularQuiet = (w.x*w.x + w.y*w.y + w.z*w.z) < 0.0156;
+      if (upY > 0.992 && linearQuiet && angularQuiet) {
+        pin.stillTime = (pin.stillTime || 0) + dt;
+        if (pin.stillTime >= 0.10) {
+          body.velocity.setZero();
+          body.angularVelocity.setZero();
+          body.force.setZero();
+          body.torque.setZero();
+          body.sleep();
+        }
+      } else {
+        pin.stillTime = 0;
+      }
+    }
+  }
+
   /** @returns {boolean} Whether all pin velocities are small enough to settle. */
   pinsAreQuiet() {
     for (const { body } of this.pins) {
@@ -749,31 +841,27 @@ class BowlingPhysics {
     return true;
   }
 
-  /**
-   * Returns whether the physical shot has actually settled.
-   *
-   * There is no time-based physics cutoff. A throw ends after the ball reaches
-   * the pit, leaves the playable area, or has physically stopped. After a hit,
-   * the pin field must additionally remain quiet for a short continuous window.
-   * @returns {boolean} Whether the physical shot has settled.
-   */
+  /** @returns {boolean} Whether the roll and visible collision reactions have finished. */
   isShotFinished() {
     if (!this.shotActive) return false;
-
     const position = this.ball.position;
     const reachedPit = this.ballAbsorbed || position.z < SETTINGS.pitAbsorbZ;
     const out = position.y < -1.5 || Math.abs(position.x) > 4.0;
-    const velocity = this.ball.velocity;
-    const ballStopped =
-      velocity.x * velocity.x +
-      velocity.y * velocity.y +
-      velocity.z * velocity.z < 0.0064;
-    const travelFinished = reachedPit || out || ballStopped;
+    const noPinHit = this.hitPins.size === 0;
+    const hardTimeout = noPinHit ? SETTINGS.noHitHardTimeout : SETTINGS.hitHardTimeout;
+    const travelFinished = reachedPit || out || this.elapsed > hardTimeout;
 
     if (!travelFinished) return false;
-    if (this.hitPins.size === 0) return true;
+    if (noPinHit) return true;
 
-    return this.quietTime >= 0.24;
+    // Do not wait for every last solver wobble. Once the ball has cleared the
+    // lane, keep enough real time after first impact for secondary pins to fall,
+    // then allow the UI to continue even if a pin is still microscopically moving.
+    const fallWindowFinished =
+      this.firstHitElapsed !== null &&
+      this.elapsed - this.firstHitElapsed >= SETTINGS.minHitResolutionAfterFirstImpact;
+
+    return this.quietTime >= 0.24 || fallWindowFinished || this.elapsed > SETTINGS.hitHardTimeout;
   }
 
   /**
@@ -1705,8 +1793,8 @@ class BowlingApp {
     if (document.hidden || this.mode === 'error') return;
     const dt = this.previousFrame === null ? 0 : Math.min((now - this.previousFrame) / 1000, 0.040);
     this.previousFrame = now;
-    // The physics world runs at 120 Hz. Five catch-up steps cover the full
-    // 40 ms frame clamp without changing the simulated time scale.
+    // V25 keeps one 60 Hz physics step and at most two catch-up steps.
+    // This caps CPU work after slow frames instead of creating a feedback loop of lag.
     this.accumulator = Math.min(this.accumulator + dt, SETTINGS.fixedStep * SETTINGS.maxSubsteps);
     let steps = 0;
     while (this.accumulator >= SETTINGS.fixedStep && steps < SETTINGS.maxSubsteps) {
