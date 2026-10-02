@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="70 105 442 309" role="img" aria-label="Pumperella crown">
+  <g fill="#050505">
+    <path d="M97 208 L138 299 L164 370 L206 356 L267 348 L318 348 L351 351 L387 358 L421 370 L456 277 L490 207 L350 291 L307 171 L293 138 L274 182 L235 291 Z"/>
+    <path d="M196 213 L197 259 L231 279 L240 254 Z"/>
+    <path d="M390 213 L345 254 L353 279 L389 258 Z"/>
+    <circle cx="293" cy="121" r="12"/>
+    <circle cx="86.5" cy="197.5" r="9.5"/>
+    <circle cx="501.5" cy="196.5" r="9.5"/>
+    <circle cx="190" cy="202" r="8"/>
+    <circle cx="396.5" cy="202" r="7.5"/>
+    <ellipse cx="293" cy="385.5" rx="124" ry="24.5"/>
+  </g>
+</svg>
