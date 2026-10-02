@@ -221,13 +221,15 @@ function installPlayerHud(playerName, dateCount) {
           -webkit-backdrop-filter: blur(10px);
         }
 
-        body.pumperella-two-date-draw .left-stack {
+        body.pumperella-two-date-draw .left-stack,
+        body.pumperella-two-date-draw .right-stack {
           display: contents;
         }
 
         body.pumperella-two-date-draw .brand,
         body.pumperella-two-date-draw .dates,
-        body.pumperella-two-date-draw .status {
+        body.pumperella-two-date-draw .status,
+        body.pumperella-two-date-draw .persistence-card {
           min-width: 0;
           max-width: none;
           border: 0;
@@ -374,10 +376,37 @@ function installPlayerHud(playerName, dateCount) {
           line-height: 1.1;
         }
 
+        body.pumperella-two-date-draw .persistence-card {
+          grid-column: 1 / -1;
+          width: 100%;
+          max-width: none;
+          margin-top: 8px;
+          padding: 8px 10px;
+          border-top: 1px solid rgba(255,255,255,.08);
+        }
+
+        body.pumperella-two-date-draw .persistence-choice {
+          min-height: 38px;
+          gap: 10px;
+        }
+
+        body.pumperella-two-date-draw .persistence-copy strong {
+          font-size: 12px;
+        }
+
+        body.pumperella-two-date-draw .persistence-copy span {
+          font-size: 9.5px;
+        }
+
+        body.pumperella-two-date-draw .persistence-footer {
+          margin-top: 5px;
+          padding-top: 5px;
+        }
+
         /* Result feedback must never sit on top of the static HUD panel.
            On mobile it becomes lightweight floating text below that panel. */
         body.pumperella-two-date-draw .result {
-          top: max(224px, calc(env(safe-area-inset-top) + 214px));
+          top: max(294px, calc(env(safe-area-inset-top) + 284px));
           min-width: 0;
           max-width: calc(100vw - 32px);
           padding: 7px 12px;
@@ -465,7 +494,7 @@ function installPlayerHud(playerName, dateCount) {
           font-size: 12px;
         }
         body.pumperella-two-date-draw .result {
-          top: max(214px, calc(env(safe-area-inset-top) + 204px));
+          top: max(284px, calc(env(safe-area-inset-top) + 274px));
         }
       }
       @media (max-height: 560px) and (orientation: landscape) {
