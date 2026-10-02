@@ -102,7 +102,7 @@ Beim ersten gültigen Spielaufruf erscheint ein kurzer Willkommensdialog mit Spi
 
 Im Smartphone-Hochformat werden Branding, die beiden Terminwerte, Spielername und Status in einem einzigen flachen Panel dargestellt. Das Branding bildet eine schmale Kopfzeile; darunter stehen die beiden Terminwerte links, „Aktuell spielt“ mittig und der Status rechts nebeneinander. Zwischen der Überschrift „Deine Termine“ und den Datums-Chips bleibt ein kleiner visueller Abstand. Die beiden Terminwerte stehen nebeneinander; ein dritter Slot ist für aktuelle Links nicht sichtbar.
 
-Die mobile Ergebnisanzeige wiederholt ein gerade aufgedecktes Datum nicht redundant über dem bereits aktualisierten Terminpanel. Fehlwurf- und Gossenhinweise bleiben sichtbar. Status- und Terminpanel dürfen die Kugel, das Stellwerk oder wesentliche Zielinformationen nicht überlagern. Safe-Area-Insets werden berücksichtigt.
+Die Datumswerte werden auch auf schmalen unterstützten Smartphone-Viewports vollständig im Format `TT.MM.JJJJ` dargestellt und nicht mit Ellipsen gekürzt. Die mobile Ergebnisanzeige wiederholt ein gerade aufgedecktes Datum nicht redundant über dem bereits aktualisierten Terminpanel. Fehlwurf- und Gossenhinweise bleiben sichtbar. Status- und Terminpanel dürfen die Kugel, das Stellwerk oder wesentliche Zielinformationen nicht überlagern. Safe-Area-Insets werden berücksichtigt.
 
 ## 8. Treffer- und Fehlwurfregeln
 
@@ -160,7 +160,7 @@ Die Umsetzung ist fachlich abgenommen, wenn:
 - Fehlwürfe keinen Termin verbrauchen,
 - nach dem zweiten Termin keine weitere Ziehung möglich ist,
 - die Krone auf der startbereiten Kugel frontal zur Kamera ausgerichtet wirkt,
-- die mobile Oberfläche Branding, zwei Termine, Spielername und Status in einem deutlich flacheren Panel ohne Überlagerung zusammenfasst und zwischen Terminüberschrift und Datums-Chips einen kleinen Abstand beibehält,
+- die mobile Oberfläche Branding, zwei vollständige Datumswerte, Spielername und Status in einem deutlich flacheren Panel ohne Überlagerung zusammenfasst, Datumswerte nicht mit Ellipsen kürzt und zwischen Terminüberschrift und Datums-Chips einen kleinen Abstand beibehält,
 - ungültige oder manipulierte Links nicht spielbar sind,
 - der private Schlüssel nicht im öffentlichen Repository enthalten ist,
 - dauerhafte Fortschrittsspeicherung nur nach ausdrücklichem Opt-in erfolgt, die Ja/Nein-Präferenz den Erstdialog bei Folgeaufrufen unterdrückt, Deaktivieren vorhandene Fortschrittsdaten nicht automatisch löscht und eine separate Löschaktion verfügbar ist,
