@@ -265,12 +265,12 @@ function installPlayerHud(playerName, dateCount) {
         }
 
         body.pumperella-two-date-draw .brand-title {
-          font-size: 17px;
+          font-size: 18px;
           line-height: 1;
         }
 
         body.pumperella-two-date-draw .version {
-          font-size: 8px;
+          font-size: 8.5px;
           letter-spacing: .15em;
         }
 
@@ -305,7 +305,7 @@ function installPlayerHud(playerName, dateCount) {
         }
 
         body.pumperella-two-date-draw .dates .card-heading small {
-          font-size: 9px;
+          font-size: 10px;
           letter-spacing: .10em;
         }
 
@@ -326,7 +326,7 @@ function installPlayerHud(playerName, dateCount) {
         }
 
         body.pumperella-two-date-draw .dates .pumperella-player-inline small {
-          font-size: 7.5px;
+          font-size: 8.25px;
           line-height: 1.1;
           letter-spacing: .07em;
         }
@@ -334,7 +334,7 @@ function installPlayerHud(playerName, dateCount) {
         body.pumperella-two-date-draw .dates .pumperella-player-inline strong {
           max-width: 100%;
           margin: 0;
-          font-size: 13px;
+          font-size: 14px;
           line-height: 1.1;
           text-align: left;
         }
@@ -362,7 +362,7 @@ function installPlayerHud(playerName, dateCount) {
         body.pumperella-two-date-draw .dates li strong {
           display: block;
           overflow: hidden;
-          font-size: clamp(10px, 3.05vw, 12px);
+          font-size: clamp(11px, 3.15vw, 13px);
           font-variant-numeric: tabular-nums;
           letter-spacing: -.015em;
           line-height: 1.2;
@@ -401,13 +401,13 @@ function installPlayerHud(playerName, dateCount) {
         }
 
         body.pumperella-two-date-draw .status small {
-          font-size: 7.5px;
+          font-size: 8.25px;
           letter-spacing: .07em;
         }
 
         body.pumperella-two-date-draw .status strong {
           margin-top: 4px;
-          font-size: 13.5px;
+          font-size: 14.5px;
           line-height: 1.08;
         }
 
@@ -486,7 +486,7 @@ function installPlayerHud(playerName, dateCount) {
           flex-basis: 33px;
         }
         body.pumperella-two-date-draw .brand-title {
-          font-size: 16px;
+          font-size: 17px;
         }
         body.pumperella-two-date-draw .dates {
           grid-template-columns: minmax(0, 1fr) minmax(52px, .34fr);
@@ -498,7 +498,7 @@ function installPlayerHud(playerName, dateCount) {
           padding-left: 6px;
         }
         body.pumperella-two-date-draw .dates .pumperella-player-inline strong {
-          font-size: 11.5px;
+          font-size: 12.25px;
         }
         body.pumperella-two-date-draw .dates ol {
           gap: 4px;
@@ -508,7 +508,7 @@ function installPlayerHud(playerName, dateCount) {
         }
         body.pumperella-two-date-draw .dates li strong,
         body.pumperella-two-date-draw .dates li.pending strong::after {
-          font-size: clamp(9.5px, 3vw, 10.5px);
+          font-size: clamp(10.25px, 3.05vw, 11.25px);
           letter-spacing: -.025em;
         }
         body.pumperella-two-date-draw .status {
@@ -516,7 +516,7 @@ function installPlayerHud(playerName, dateCount) {
           padding-left: 6px;
         }
         body.pumperella-two-date-draw .status strong {
-          font-size: 12.5px;
+          font-size: 13.25px;
         }
         body.pumperella-two-date-draw .result {
           top: max(164px, calc(env(safe-area-inset-top) + 154px));
