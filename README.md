@@ -81,10 +81,8 @@ Never commit exported signing keys or draw archives. The repository
 `.gitignore` blocks the expected local filenames as a defense-in-depth
 measure.
 
-The current Git history contains legacy commit metadata with personal author
-email addresses. Before changing repository visibility to public, rewrite that
-history to a GitHub noreply address or explicitly accept that those historical
-addresses will become public.
+The reachable Git history has been rewritten so project commits use GitHub
+noreply identities instead of personal email addresses.
 
 ## Runtime dependencies
 
