@@ -563,7 +563,7 @@ function installTwoDateCopyCompatibility() {
   }
 }
 
-/** @param {object} three Three.js namespace. */
+/** @param {typeof import("three")} three Three.js namespace. */
 function installSceneHook(three) {
   const prototype = three.Scene.prototype;
   if (prototype[SCENE_HOOK_KEY]) {
@@ -585,7 +585,7 @@ function installSceneHook(three) {
   });
 }
 
-/** @param {object} scene @param {object} three */
+/** @param {import("three").Scene} scene @param {typeof import("three")} three */
 function scheduleSceneBranding(scene, three) {
   if (scene.userData[SCENE_PENDING_KEY]) {
     return;
@@ -609,7 +609,7 @@ function scheduleSceneBranding(scene, three) {
   });
 }
 
-/** @param {object} scene @returns {object|null} */
+/** @param {import("three").Scene} scene @returns {import("three").Group|null} */
 function findPinsetter(scene) {
   let match = null;
   scene.traverse((object) => {
@@ -639,7 +639,7 @@ function findPinsetter(scene) {
   return match;
 }
 
-/** @param {object} scene @returns {object|null} */
+/** @param {import("three").Scene} scene @returns {import("three").Mesh|null} */
 function findPlayableBall(scene) {
   let match = null;
   scene.traverse((object) => {
@@ -669,7 +669,7 @@ export function resolveBallCrownOffset(radius) {
   ];
 }
 
-/** @param {object} setter @param {object} three */
+/** @param {import("three").Group} setter @param {typeof import("three")} three */
 function addPinsetterBrand(setter, three) {
   const material = new three.MeshBasicMaterial({
     map: createPinsetterTexture(three),
@@ -699,7 +699,7 @@ function addPinsetterBrand(setter, three) {
   });
 }
 
-/** @param {object} ball @param {object} three */
+/** @param {import("three").Mesh} ball @param {typeof import("three")} three */
 function addOfficialCrownToBall(ball, three) {
   for (const child of ball.children) {
     if (child.isSprite || child.name === "PumperellaOfficialBallCrown") {
@@ -739,7 +739,7 @@ function addOfficialCrownToBall(ball, three) {
   ball.add(emblem);
 }
 
-/** @param {object} three */
+/** @param {typeof import("three")} three */
 function createBallPrintTexture(three) {
   const canvas = document.createElement("canvas");
   canvas.width = 512;
@@ -804,7 +804,7 @@ function loadOfficialLogo(onLoad) {
   image.src = new URL("./assets/pumperella-logo.png", import.meta.url).href;
 }
 
-/** @param {object} three @param {CanvasImageSource|null} [logoImage=null] */
+/** @param {typeof import("three")} three @param {CanvasImageSource|null} [logoImage=null] */
 function createPinsetterTexture(three, logoImage = null) {
   const canvas = document.createElement("canvas");
   canvas.width = 1536;
@@ -876,7 +876,7 @@ function createPinsetterTexture(three, logoImage = null) {
   return texture;
 }
 
-/** @param {object} three @param {CanvasImageSource|null} [logoImage=null] */
+/** @param {typeof import("three")} three @param {CanvasImageSource|null} [logoImage=null] */
 function createBallCrownTexture(three, logoImage = null) {
   const canvas = document.createElement("canvas");
   canvas.width = 320;

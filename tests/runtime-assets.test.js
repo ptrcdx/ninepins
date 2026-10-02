@@ -17,6 +17,9 @@ const REFERENCE_PATTERNS = Object.freeze([
   /\burl\(\s*["']?([^"')]+)["']?\s*\)/gu,
 ]);
 
+const JSDOC_MODULE_TYPE_PATTERN =
+  /\{(?:typeof\s+)?import\(\s*["'][^"']+["']\s*\)(?:\.[A-Za-z_$][\w$]*)?(?:\|null)?\}/gu;
+
 /**
  * Recursively returns production text assets that can contain runtime resource
  * references.
@@ -46,16 +49,29 @@ function collectRuntimeFiles(directory) {
  * @returns {string[]} Referenced URLs or relative paths.
  */
 function extractRuntimeReferences(content) {
+  const runtimeContent = removeJSDocModuleTypeReferences(content);
   const references = [];
   for (const pattern of REFERENCE_PATTERNS) {
     pattern.lastIndex = 0;
-    let match = pattern.exec(content);
+    let match = pattern.exec(runtimeContent);
     while (match) {
       references.push(match[1]);
-      match = pattern.exec(content);
+      match = pattern.exec(runtimeContent);
     }
   }
   return references;
+}
+
+/**
+ * Removes JSDoc-only module type expressions before runtime dependency
+ * extraction. These references are consumed by editors/type checkers and do
+ * not cause a browser module request.
+ *
+ * @param {string} content File content.
+ * @returns {string} Content with JSDoc module type expressions masked.
+ */
+function removeJSDocModuleTypeReferences(content) {
+  return content.replace(JSDOC_MODULE_TYPE_PATTERN, "{}");
 }
 
 /**
@@ -98,6 +114,16 @@ function formatReference(sourceFile, reference) {
 }
 
 describe("GitHub Pages runtime dependency closure", () => {
+  it("ignores JSDoc module types while keeping real dynamic imports", () => {
+    const content = [
+      '/** @param {typeof import("three")} three */',
+      '/** @returns {import("three").Mesh|null} */',
+      'const runtime = import("./runtime.js");',
+    ].join("\n");
+
+    expect(extractRuntimeReferences(content)).toEqual(["./runtime.js"]);
+  });
+
   it("keeps every declared runtime dependency same-origin and present", () => {
     const missingReferences = [];
     const externalReferences = [];
