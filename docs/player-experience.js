@@ -764,12 +764,12 @@ function addOfficialCrownToBall(ball, three) {
   const crownOffset = resolveBallCrownOffset(radius);
   const normal = new three.Vector3(...crownOffset).normalize();
 
-  // Use a real plane tangent to the sphere instead of a Sprite. A Sprite always
-  // faces the camera and therefore looked like a loose sticker. This mesh keeps
-  // its orientation relative to the ball and rotates naturally with it.
-  const geometry = new three.PlaneGeometry(0.40, 0.26);
+  // The crown is based on the traced SVG asset and uses a subdivided mesh whose
+  // vertices follow the sphere. This makes the mark read as a direct print on
+  // the lacquered ball instead of a flat sticker hovering in front of it.
+  const geometry = createCurvedBallPrintGeometry(three, radius, 0.40, 0.28);
   const material = new three.MeshBasicMaterial({
-    map: createBallPrintTexture(three),
+    map: createVectorBallCrownTexture(three),
     transparent: true,
     alphaTest: 0.08,
     depthTest: true,
@@ -792,69 +792,43 @@ function addOfficialCrownToBall(ball, three) {
   ball.add(emblem);
 }
 
-/** @param {typeof import("three")} three */
-function createBallPrintTexture(three) {
-  const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 256;
-  const context = canvas.getContext("2d");
-  context.clearRect(0, 0, canvas.width, canvas.height);
-  context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = "high";
+/**
+ * Creates a dense rectangular patch bent to the ball radius.
+ *
+ * @param {typeof import("three")} three Three.js namespace.
+ * @param {number} radius Ball radius.
+ * @param {number} width Printed crown width.
+ * @param {number} height Printed crown height.
+ * @returns {import("three").PlaneGeometry} Curved print geometry.
+ */
+function createCurvedBallPrintGeometry(three, radius, width, height) {
+  const geometry = new three.PlaneGeometry(width, height, 24, 16);
+  const positions = geometry.attributes.position;
 
-  // Reproduce the solid black crown from the official Pumperella logo as a
-  // clean print. No glow, outline or white backing is used on the ball.
-  context.fillStyle = "#050505";
-  context.lineJoin = "round";
-  context.lineCap = "round";
-
-  context.beginPath();
-  context.moveTo(66, 176);
-  context.lineTo(112, 126);
-  context.lineTo(200, 174);
-  context.lineTo(256, 46);
-  context.lineTo(312, 174);
-  context.lineTo(400, 126);
-  context.lineTo(446, 176);
-  context.quadraticCurveTo(256, 214, 66, 176);
-  context.closePath();
-  context.fill();
-
-  // The two shorter inner points are characteristic of the crown in the logo.
-  for (const points of [
-    [[176, 144], [176, 112], [192, 112], [222, 154], [206, 170]],
-    [[290, 154], [320, 112], [336, 112], [336, 144], [306, 170]],
-  ]) {
-    context.beginPath();
-    points.forEach(([x, y], index) => {
-      if (index === 0) context.moveTo(x, y);
-      else context.lineTo(x, y);
-    });
-    context.closePath();
-    context.fill();
+  for (let index = 0; index < positions.count; index += 1) {
+    const x = positions.getX(index);
+    const y = positions.getY(index);
+    const radialSquared = x * x + y * y;
+    const surfaceZ = Math.sqrt(Math.max(radius * radius - radialSquared, 0));
+    positions.setZ(index, surfaceZ - radius);
   }
 
-  for (const [x, y, radius] of [
-    [112, 126, 15],
-    [192, 112, 11],
-    [256, 46, 17],
-    [320, 112, 11],
-    [400, 126, 15],
-  ]) {
-    context.beginPath();
-    context.arc(x, y, radius, 0, Math.PI * 2);
-    context.fill();
-  }
+  positions.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return geometry;
+}
 
-  // Keep the oval base visually separate, matching the source logo.
-  context.beginPath();
-  context.ellipse(256, 210, 144, 18, 0, 0, Math.PI * 2);
-  context.fill();
-
-  const texture = new three.CanvasTexture(canvas);
+/** @param {typeof import("three")} three Three.js namespace. */
+function createVectorBallCrownTexture(three) {
+  const texture = new three.TextureLoader().load(
+    new URL("./assets/pumperella-crown.svg", import.meta.url).href,
+    (loadedTexture) => {
+      loadedTexture.colorSpace = three.SRGBColorSpace;
+      loadedTexture.anisotropy = 8;
+      loadedTexture.needsUpdate = true;
+    },
+  );
   texture.colorSpace = three.SRGBColorSpace;
-  texture.anisotropy = 4;
-  texture.needsUpdate = true;
   return texture;
 }
 
