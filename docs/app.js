@@ -1,7 +1,7 @@
 import { PlayerDrawSession } from "./player-session.js?v=4";
 import { importVerificationKey, verifyDrawToken } from "./token.js?v=3";
 import { installPumperellaVisualTheme } from "./visual-theme.js?v=2";
-import { installPlayerExperience } from "./player-experience.js?v=14";
+import { installPlayerExperience } from "./player-experience.js?v=15";
 
 const PERSISTENCE_CONSENT_KEY = "pumperella.progressPersistenceConsent.v1";
 const PERSISTENCE_GRANTED = "granted";
