@@ -895,7 +895,7 @@ class BowlingPhysics {
       this.firstHitElapsed !== null &&
       this.elapsed - this.firstHitElapsed >= SETTINGS.pinScoringWindowSeconds;
 
-    return this.quietTime >= 0.24 || fallWindowFinished || this.elapsed > SETTINGS.hitHardTimeout;
+    return this.quietTime >= 0.24 || fallWindowFinished || this.elapsed > hardTimeout;
   }
 
   /**
