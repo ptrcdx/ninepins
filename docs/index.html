@@ -51,6 +51,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .right-stack{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
 .status{text-align:right;min-width:220px;padding:12px 16px;border-color:var(--panel-border);background:var(--panel-strong);box-shadow:var(--shadow-strong)}
 .status strong{display:block;margin-top:4px;font-size:clamp(20px,2vw,28px);line-height:1.1}
+.round-score{display:block;margin-top:7px;color:var(--gold);font-size:12px;font-weight:800;letter-spacing:.04em}
 .settings-menu-button{position:fixed;top:calc(env(safe-area-inset-top) + 8px);right:max(8px,env(safe-area-inset-right));z-index:70;display:grid;place-items:center;width:38px;height:38px;padding:0;border:1px solid rgba(255,255,255,.18);border-radius:999px;background:rgba(19,10,15,.34);color:rgba(255,255,255,.82);font:800 22px/1 system-ui;letter-spacing:.08em;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:background .15s,color .15s,opacity .15s}
 .settings-menu-button[hidden]{display:none}
 .settings-menu-button:hover,.settings-menu-button:focus-visible,.settings-menu-button[aria-expanded="true"]{background:rgba(38,17,29,.82);color:#fff}
@@ -163,7 +164,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
       </div>
     </div>
     <div class="right-stack">
-      <div class="card status"><small>Status</small><strong id="status">Link wird geprüft ...</strong></div>
+      <div class="card status"><small>Status</small><strong id="status">Link wird geprüft ...</strong><span class="round-score" id="roundScore">Runde: — / 9</span></div>
     </div>
   </div>
   <div class="bottom"><div class="card hint"><strong id="hintTitle">Persönlichen Link prüfen</strong><span id="hintText">Nach erfolgreicher Prüfung liegt die Kugel vorne bereit.</span><div class="meter"><i id="power"></i></div><button id="next" type="button" hidden>Nächster Wurf</button></div></div>
@@ -223,6 +224,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 
 <script type="module">
 import { createPlayerSession } from "./app.js?v=9";
+import { PinScoringTracker } from "./pin-scoring.js?v=1";
 /**
  * Pure geometry and gesture calculations for Pumperella.
  * Coordinates use Y up; decreasing Z points towards the pin deck.
@@ -289,7 +291,7 @@ const SETTINGS = Object.freeze({
   noHitHardTimeout: 8.5,
   hitHardTimeout: 5.0,
   dateRevealDelayAfterHit: 0.75,
-  minHitResolutionAfterFirstImpact: 1.55
+  pinScoringWindowSeconds: 4.0
 });
 
 /**
@@ -537,6 +539,7 @@ class BowlingPhysics {
     this.pins = [];
     this.pinIds = new Set();
     this.hitPins = new Set();
+    this.scoring = new PinScoringTracker(PIN_HOMES.length);
     this.shotActive = false;
     this.gutter = false;
     this.ballAbsorbed = false;
@@ -544,7 +547,7 @@ class BowlingPhysics {
     this.quietTime = 0;
     this.firstHitElapsed = null;
     this.buildSurfaces();
-    for (const [x, z] of PIN_HOMES) this.createPin(x, z);
+    PIN_HOMES.forEach(([x, z], index) => this.createPin(x, z, index + 1));
     this.ball = new cannon.Body({
       mass: SETTINGS.ballMass,
       shape: new cannon.Sphere(SETTINGS.ballRadius),
@@ -604,8 +607,9 @@ class BowlingPhysics {
    * silhouette receives the same shift in the Three.js adapter.
    * @param {number} x Home X.
    * @param {number} z Home Z.
+   * @param {number} pinNumber Official one-based pin number.
    */
-  createPin(x, z) {
+  createPin(x, z, pinNumber) {
     const C = this.C;
     const center = this.pinCenterY;
     const body = new C.Body({
@@ -630,7 +634,7 @@ class BowlingPhysics {
     body.position.set(x, center + SETTINGS.floorClearance, z);
     this.applyPinInertia(body);
     this.world.addBody(body);
-    this.pins.push({ body, home: { x, z }, stillTime: 0 });
+    this.pins.push({ body, home: { x, z }, pinNumber, stillTime: 0 });
     this.pinIds.add(body.id);
   }
 
@@ -685,6 +689,7 @@ class BowlingPhysics {
     this.gutter = false;
     this.ballAbsorbed = false;
     this.hitPins.clear();
+    this.scoring.reset();
   }
 
   /**
@@ -700,6 +705,7 @@ class BowlingPhysics {
     this.ball.angularVelocity.set(-aim.speed / SETTINGS.ballRadius, 0, -aim.side / SETTINGS.ballRadius);
     this.ball.wakeUp();
     this.hitPins.clear();
+    this.scoring.reset();
     this.gutter = false;
     this.ballAbsorbed = false;
     this.elapsed = 0;
@@ -729,6 +735,7 @@ class BowlingPhysics {
     this.world.step(dt);
     this.constrainBallToTrack(dt);
     this.keepBallMovingToPit();
+    this.observePinScoring(dt);
     this.settleStandingPins(dt);
 
     if (this.shotActive && !this.ballAbsorbed && this.ball.position.z < SETTINGS.pitAbsorbZ) {
@@ -801,6 +808,31 @@ class BowlingPhysics {
   }
 
   /**
+   * Track fallen pins while the four-second result window is open.
+   * Quiet pins may allow the throw to finish earlier because no later fall is
+   * physically possible once the complete field has settled.
+   * @param {number} dt Fixed simulation step in seconds.
+   */
+  observePinScoring(dt) {
+    if (!this.shotActive || this.firstHitElapsed === null) return;
+    if (this.elapsed - this.firstHitElapsed > SETTINGS.pinScoringWindowSeconds) return;
+
+    for (const pin of this.pins) {
+      this.scoring.observe(pin.pinNumber, pin.body.quaternion, dt);
+    }
+  }
+
+  /**
+   * @returns {{score:number,fallenPinNumbers:number[]}} Snapshot of the current throw score.
+   */
+  getThrowScore() {
+    return {
+      score: this.scoring.getScore(),
+      fallenPinNumbers: this.scoring.getFallenPinNumbers()
+    };
+  }
+
+  /**
    * Standing pins can receive tiny solver impulses from neighbouring contacts and
    * appear to tremble indefinitely. If a pin is essentially upright and almost
    * motionless for a short interval, put it to sleep. Falling/rolling pins are
@@ -848,7 +880,9 @@ class BowlingPhysics {
     const reachedPit = this.ballAbsorbed || position.z < SETTINGS.pitAbsorbZ;
     const out = position.y < -1.5 || Math.abs(position.x) > 4.0;
     const noPinHit = this.hitPins.size === 0;
-    const hardTimeout = noPinHit ? SETTINGS.noHitHardTimeout : SETTINGS.hitHardTimeout;
+    const hardTimeout = noPinHit
+      ? SETTINGS.noHitHardTimeout
+      : Math.max(SETTINGS.hitHardTimeout, (this.firstHitElapsed ?? 0) + SETTINGS.pinScoringWindowSeconds);
     const travelFinished = reachedPit || out || this.elapsed > hardTimeout;
 
     if (!travelFinished) return false;
@@ -859,7 +893,7 @@ class BowlingPhysics {
     // then allow the UI to continue even if a pin is still microscopically moving.
     const fallWindowFinished =
       this.firstHitElapsed !== null &&
-      this.elapsed - this.firstHitElapsed >= SETTINGS.minHitResolutionAfterFirstImpact;
+      this.elapsed - this.firstHitElapsed >= SETTINGS.pinScoringWindowSeconds;
 
     return this.quietTime >= 0.24 || fallWindowFinished || this.elapsed > SETTINGS.hitHardTimeout;
   }
@@ -943,7 +977,7 @@ class BowlingApp {
     this.shotRevealedDate = null;
     this.earlyRevealPending = false;
     this.ui = {};
-    for (const id of ['app', 'status', 'hintTitle', 'hintText', 'power', 'result', 'resultLabel', 'resultValue', 'aim', 'marker', 'next', 'date-1', 'date-2', 'date-3', 'date-row-1', 'date-row-2', 'date-row-3']) {
+    for (const id of ['app', 'status', 'roundScore', 'hintTitle', 'hintText', 'power', 'result', 'resultLabel', 'resultValue', 'aim', 'marker', 'next', 'date-1', 'date-2', 'date-3', 'date-row-1', 'date-row-2', 'date-row-3']) {
       this.ui[id] = document.getElementById(id);
     }
     this.buildScene();
@@ -1534,6 +1568,7 @@ class BowlingApp {
     this.earlyRevealPending = false;
     this.physics.launch(aim);
     this.ui.status.textContent = 'Kugel rollt';
+    this.ui.roundScore.textContent = 'Runde: läuft';
     this.ui.hintTitle.textContent = 'Wurf läuft';
     this.ui.hintText.textContent = 'Treffer zieht einen Termin. Gosse oder kein Kegeltreffer verbrauchen keinen Termin.';
   }
@@ -1651,15 +1686,18 @@ class BowlingApp {
   async completeShot() {
     if (this.mode !== 'rolling') return;
     this.mode = 'resolving';
+    const throwScore = this.physics.getThrowScore();
     this.physics.finishShot();
     const missed = this.physics.gutter || this.physics.hitPins.size === 0;
+    const score = missed ? 0 : throwScore.score;
+    this.ui.roundScore.textContent = `Runde: ${score} / 9`;
     this.lastShotMissed = missed;
     const hasDateToReveal = this.playerSession.hasRemainingDates();
 
     if (missed) {
       this.ui.result.className = 'result show gutter';
       this.ui.resultLabel.textContent = this.physics.gutter ? 'Gosse' : 'Kein Kegel getroffen';
-      this.ui.resultValue.textContent = 'Versuch wiederholen';
+      this.ui.resultValue.textContent = '0 / 9 Kegel';
       this.ui.status.textContent = 'Fehlwurf';
       this.ui.hintTitle.textContent = hasDateToReveal ? 'Kein Datum gezogen' : 'Freies Spiel';
       this.ui.hintText.textContent = hasDateToReveal
@@ -1676,7 +1714,7 @@ class BowlingApp {
           this.ui[`date-row-${this.drawNumber}`].className = 'revealed reveal-pop';
         }
         this.ui.result.className = 'result show date';
-        this.ui.resultLabel.textContent = `Termin ${this.drawNumber} gezogen`;
+        this.ui.resultLabel.textContent = `${score} / 9 Kegel · Termin ${this.drawNumber}`;
         this.ui.resultValue.textContent = date;
         this.ui.status.textContent = 'Wurf beendet';
         this.ui.hintTitle.textContent = this.playerSession.hasRemainingDates()
@@ -1697,7 +1735,7 @@ class BowlingApp {
     } else {
       this.ui.result.className = 'result show';
       this.ui.resultLabel.textContent = 'Freies Spiel';
-      this.ui.resultValue.textContent = 'Treffer';
+      this.ui.resultValue.textContent = `${score} / 9 Kegel`;
       this.ui.status.textContent = 'Wurf beendet';
       this.ui.hintTitle.textContent = 'Termine bleiben unverändert';
       this.ui.hintText.textContent = 'Alle drei Termine sind bereits gezogen. Du kannst beliebig weiterspielen.';
